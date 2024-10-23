@@ -30,10 +30,10 @@ logging.basicConfig(
     format='Line: %(lineno)s - %(levelname)s %(module)s | %(asctime)s | : %(message)s',
     datefmt='%H:%M:%S %Y-%m-%d',
     level=logging.INFO, 
-    handlers=[
-        logging.FileHandler("./log/bot.log"),
-        logging.StreamHandler()
-    ]
+    #handlers=[
+    #    logging.FileHandler("./log/bot.log"),
+    #    logging.StreamHandler()
+    #]
 )
 
 
