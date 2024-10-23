@@ -73,7 +73,9 @@ class InteractionChatCommands(commands.Cog):
 
             case content if random.random() < 0.02:  # 2% chance to add a random emoji reaction
                 emoji_list = list(emoji.EMOJI_DATA.keys())  # Get all available emojis
-                await message.add_reaction(random.choice(emoji_list))
+                try:
+                    await message.add_reaction(random.choice(emoji_list))
+                except Exception: pass
 
             case _:
                 pass

@@ -139,6 +139,7 @@ class DownloadCog(Cog):
 
   @app_commands.command(name="download", description="[Utilitários 📄] Baixa URL ou pesquisa em formatos de áudios ou vídeos")
   @app_commands.choices(codec=[
+    Choice(name="best format", value="0"),
     Choice(name="mp4", value="1"),
     Choice(name="webm", value="2"),
     Choice(name="mp3", value="3"),
@@ -167,6 +168,8 @@ class DownloadCog(Cog):
     # ======= Value Codec =========
 
     match codec.value:
+        case "0":
+          codec.value = "bestvideo+bestaudio/best"
         case "1":
             codec.value = "bestvideo[ext=mp4][codec^=avc1]+bestaudio/best/bestvideo[ext=mp4]+bestaudio/best/bestvideo+bestaudio/best"
         case "2":
