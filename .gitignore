@@ -4,3 +4,6 @@ squarecloud.app
 requirements.txt
 receiver.py
 /assets
+/extensions/__pycache__
+/extensions/Utils/__pycache__
+/utils/__pycache__

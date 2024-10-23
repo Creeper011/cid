@@ -184,3 +184,16 @@ async def get_provability(guild_id: int, channel_id: int):
             return None
     else:
         return None
+
+async def get_channel_ids(guild_id: int):
+    """Returns all ids in guild
+    
+    ### Atrbuttes:
+    Guild Id: int 
+    ### Returns:
+    List of Ids or None"""
+    data = load_data()
+    if str(guild_id) in data:
+        return list(data[str(guild_id)].keys())
+    else:
+        return None

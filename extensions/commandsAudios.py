@@ -212,6 +212,30 @@ class commandsAudios(commands.Cog):
     else:
       await interaction.response.send_message(":x: O canal não está no meu sistema")
   
+  @audios.command(name="view", description="[Audios 🔊] Veja os canais no sistema de audios")
+  async def get_all_info(self, interaction : discord.Interaction):
+    channels_ids = await get_channel_ids(guild_id=interaction.guild.id)
+    channels = []
+    if channels_ids:
+      for channel_id in channels_ids:
+        channel = await self.bot.fetch_channel(channel_id)
+        permissions = channel.permissions_for(interaction.user)
+            
+        if permissions.read_messages:
+            channels.append(channel.name)
+        
+      embed = discord.Embed(
+          title="📺 Canais com sistema de áudios do Cid",
+          description="```" + "\n".join(channels) + "```" if channels else "nenhum canal disponível.",
+          colour=0x00b0f4
+      )
+      await interaction.response.send_message(embed=embed)
+      return
+    else:
+      await interaction.response.send_message(embed=create_error(error="Erro ao obter dados", type="ERROR_GET"))
+      return
+      
+  
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(commandsAudios(bot))
