@@ -1,0 +1,5 @@
+/config/.env
+/assets/key.key
+squarecloud.app
+requirements.txt
+receiver.py
