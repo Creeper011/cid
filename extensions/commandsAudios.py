@@ -151,8 +151,10 @@ class commandsAudios(commands.Cog):
                 await voice_client.disconnect()
                 return
             audio_path = os.path.join(AUDIO_FOLDER, random.choice(file))
-
-        audio_source = discord.FFmpegPCMAudio(audio_path)
+        ffmpeg_options = {
+            'options': '-af loudnorm'
+            }
+        audio_source = discord.FFmpegPCMAudio(audio_path,**ffmpeg_options)
         await interaction.response.send_message(f":thumbsup: Tocando agora.",ephemeral=True)
         voice_client.play(audio_source)
 

@@ -90,7 +90,11 @@ class MainAudio(commands.Cog):
             await self.wait_until_playing(voice_client)
 
             # Creates a audio source
-            audio_source = discord.FFmpegPCMAudio(os.path.join(AUDIO_FOLDER, audio_file))
+            ffmpeg_options = {
+            'options': '-af loudnorm'
+            }
+            # Cria uma fonte de áudio com o filtro
+            audio_source = discord.FFmpegPCMAudio(os.path.join(AUDIO_FOLDER, audio_file), **ffmpeg_options)
             
             # Play
             voice_client.play(audio_source)
