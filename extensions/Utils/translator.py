@@ -14,8 +14,8 @@ class TranslateCog(commands.Cog):
             callback=self.translate_message)
         bot.tree.add_command(translate_context_menu)
 
-    @app_commands.allowed_contexts(guilds=True, dms=True)
-    @app_commands.allowed_installs(guilds=True, users=True)
+    @app_commands.commands.allowed_installs(guilds=True,users=True)
+    @app_commands.allowed_contexts(guilds=True,dms=True,private_channels=True)
     async def translate_message(self, interaction: discord.Interaction, message: discord.Message) -> None:
 
         if not message.content.strip():
@@ -45,6 +45,8 @@ class TranslateCog(commands.Cog):
         except Exception as e:
             embed = create_error(error="Erro desconhecido",code=str(e)[:200], type="POSSIBLE_TRANSLATE_ERROR")
             await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(TranslateCog(bot))

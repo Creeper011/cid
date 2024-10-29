@@ -35,6 +35,10 @@ logging.basicConfig(
     #    logging.StreamHandler()
     #]
 )
+logging.getLogger('discord.voice').setLevel(logging.CRITICAL)
+logging.getLogger('discord.gateway').setLevel(logging.CRITICAL)
+logging.getLogger('discord.player').setLevel(logging.CRITICAL)
+logging.getLogger('discord.voice_state').setLevel(logging.CRITICAL)
 
 
 # Cid Config
@@ -72,7 +76,7 @@ async def on_shard_error(shard_id, error):
 if env:
     log.info('Loaded .env file successfully')
     if os.getenv('token'):
-        bot.run(token=os.getenv('token'))
+        bot.run(token=os.getenv('token'), reconnect=True, log_level=logging.INFO)
     else:
         raise TypeError
 else:

@@ -64,6 +64,7 @@ class Vcdy(commands.Cog):
                         f"📄 Extras:\n"
                         f"> </record:1283856578134671385> => Grava as conversas na call\n"
                         f"> </radio:1292340976311992352> => Toca radio\n"
+                        f"> </play:1299479846652739727> => Toque músicas sem link ou com link"
                     ),
                     inline=False
                 )

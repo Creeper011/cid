@@ -2,6 +2,9 @@
 
 #- Imports
 
+import io
+import tempfile
+import uuid
 import discord
 from discord import app_commands
 
@@ -21,10 +24,10 @@ import discord
 from discord.ext import commands, tasks
 
 #- Audio
+from gtts import gTTS
 from moviepy.editor import AudioFileClip
 
 from utils.jsonAudios import *
-
 #---- Logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -41,7 +44,7 @@ AUDIO_FOLDER = config['Audio']['AudioPath']
 class MainAudio(commands.Cog):
     
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.loop_function.start()
         self.last_played = {}
@@ -91,7 +94,7 @@ class MainAudio(commands.Cog):
 
             # Creates a audio source
             ffmpeg_options = {
-            'options': '-af loudnorm'
+            'options': f'-af "loudnorm,volume=0.7"'
             }
             # Cria uma fonte de áudio com o filtro
             audio_source = discord.FFmpegPCMAudio(os.path.join(AUDIO_FOLDER, audio_file), **ffmpeg_options)
@@ -136,7 +139,34 @@ class MainAudio(commands.Cog):
             if decisionEnter:
               await self.play_audio(channel, guild)
             else:
-              return
+                decisionEnterspeak = random.choices([True,False],weights=[30, 70])
+                if decisionEnterspeak:
+                    message_cog = self.bot.get_cog("MarkovCog")
+                    message = await message_cog.trigger()
+                    # Gera o arquivo de áudio usando o Google TTS
+                    audio_filename = f"{uuid.uuid4()}.mp3"  # Usar .mp3 com gTTS
+                    tts = gTTS(text=message, lang='pt')  # Define a linguagem para português
+                    tts.save(audio_filename)
+
+                    voice_client = await channel.connect()
+                    await self.wait_until_playing(voice_client)
+
+                    # Cria uma fonte de áudio
+                    ffmpeg_options = {
+                        'options': f'-af "loudnorm,volume=0.7"'
+                    }
+                    audio_source = discord.FFmpegPCMAudio(executable="ffmpeg", source=audio_filename, **ffmpeg_options)
+                    voice_client.play(audio_source)
+
+                    while voice_client.is_playing():
+                        await asyncio.sleep(0.5)
+
+                    await voice_client.disconnect()
+
+                    # Remove o arquivo temporário após a reprodução
+                    os.remove(audio_filename)
+                else:
+                    return
 
 async def setup(bot):
     await bot.add_cog(MainAudio(bot))

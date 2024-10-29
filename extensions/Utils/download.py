@@ -139,11 +139,11 @@ class DownloadCog(Cog):
 
   @app_commands.command(name="download", description="[Utilitários 📄] Baixa URL ou pesquisa em formatos de áudios ou vídeos")
   @app_commands.choices(codec=[
-    Choice(name="best format", value="0"),
-    Choice(name="mp4", value="1"),
-    Choice(name="webm", value="2"),
-    Choice(name="mp3", value="3"),
-    Choice(name="wav", value="4")
+    Choice(name="best format", value=2),
+    Choice(name="mp4", value=1),
+    Choice(name="webm", value=2),
+    Choice(name="mp3", value=3),
+    Choice(name="wav", value=4)
 ])
   @app_commands.choices(captions=[
       Choice(name="Português", value="pt"),  # Portuguese
@@ -162,24 +162,25 @@ class DownloadCog(Cog):
   @app_commands.rename(codec="format")
   @app_commands.commands.allowed_installs(guilds=True,users=True)
   @app_commands.allowed_contexts(guilds=True,dms=True,private_channels=True)
-  async def downloadcommand(self, interaction: Interaction, url: str, codec: Choice[str], invisible: bool = False, only_media: bool = False, captions: Choice[str] = None) -> None:
+  async def downloadcommand(self, interaction: Interaction, url: str, codec: Choice[int], invisible: bool = False, only_media: bool = False, captions: Choice[str] = None) -> None:
     """A commmand to donwload videos on Youtube with different formats"""
 
     # ======= Value Codec =========
 
     match codec.value:
-        case "0":
-          codec.value = "bestvideo+bestaudio/best"
-        case "1":
-            codec.value = "bestvideo[ext=mp4][codec^=avc1]+bestaudio/best/bestvideo[ext=mp4]+bestaudio/best/bestvideo+bestaudio/best"
-        case "2":
-            codec.value = "bestvideo[ext=webm][codec^=vp09]+bestaudio/best/bestvideo[ext=webm]+bestaudio/best/bestvideo+bestaudio/best"
-        case "3":
-            codec.value = "bestaudio[ext=mp3]/bestaudio/best"
-        case "4":
-            codec.value = "bestaudio[ext=wav]/bestaudio/best"
+        case 0:
+          format_to_use = "bestvideo+bestaudio/best"
+          codec.name = "mp4"
+        case 1:
+            format_to_use = "bestvideo[ext=mp4][codec^=avc1]+bestaudio/best/bestvideo[ext=mp4]+bestaudio/best/bestvideo+bestaudio/best"
+        case 2:
+            format_to_use = "bestvideo[ext=webm][codec^=vp09]+bestaudio/best/bestvideo[ext=webm]+bestaudio/best/bestvideo+bestaudio/best"
+        case 3:
+            format_to_use = "bestaudio[ext=mp3]/bestaudio/best"
+        case 4:
+            format_to_use = "bestaudio[ext=wav]/bestaudio/best"
         case _:
-            codec.value = "bestaudio/best"
+            format_to_use = "bestaudio/best"
 
     # ============================
     # SETUP
@@ -240,7 +241,7 @@ class DownloadCog(Cog):
     # DONWLOAD LOGIC
     # ============================
 
-    async def download(interaction: Interaction, url: str, codec: Choice, only_media: bool, captions: str, invisible: bool, is_spotify : bool) -> str:
+    async def download(interaction: Interaction, url: str, format_name: str, format_value: str, only_media: bool, captions: str, invisible: bool, is_spotify : bool) -> str:
       """
       Asynchronous download using Asyncio
 
@@ -263,7 +264,7 @@ class DownloadCog(Cog):
       postprocessors_wav = [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'wav', 'preferredquality': 'best'}]
 
       # Check postprocess to use if it's audio
-      match codec.name.lower():
+      match format_name.lower():
         case "mp3":
           post = postprocessors_mp3
         case "wav":
@@ -271,12 +272,11 @@ class DownloadCog(Cog):
         case _:
           post = None
 
-      print("fomrat"+codec.value)
       ydl_opts = {
-        'format': codec.value,
+        'format': format_value,
         'noplaylist': True,
         'outtmpl': f'{os.path.join(download_folder, "%(title)s.%(ext)s")}',
-        'progress_hooks': [lambda d: asyncio.run_coroutine_threadsafe(progress_hook(d, interaction, url, codec.name, captions, is_spotify), loop).result()] if not only_media else [],
+        'progress_hooks': [lambda d: asyncio.run_coroutine_threadsafe(progress_hook(d, interaction, url, format_name, captions, is_spotify), loop).result()] if not only_media else [],
         'postprocessors': post if post else [
             {
                 'key': 'FFmpegSubtitlesConvertor',
@@ -349,7 +349,7 @@ class DownloadCog(Cog):
             
             if not os.path.exists(filepath):
               file_name, file_extension = os.path.splitext(filepath)
-              filepath = f"{file_name}.{codec.name}"
+              filepath = f"{file_name}.{format_name}"
 
             file_size = os.path.getsize(filepath)
 
@@ -368,9 +368,7 @@ class DownloadCog(Cog):
                 await interaction.followup.send(embed=embed,ephemeral=invisible)
                 return download_folder
                
-              embed = Embed()
-              embed.set_author(name="Cid's Downloads")
-              embed.add_field(name="📄 Link:", value=f"[Clique aqui]({link})\n```{link}```")
+              embed = Embed(description=f"## <:download:1299113329234542612> Cid's Download!\n📄 Link: [Clique aqui]({link})\n```{link}```")
 
               try:
                 await interaction.edit_original_response(embed=embed)
@@ -407,7 +405,7 @@ class DownloadCog(Cog):
     # INIT DOWNLOAD
     # ============================
 
-    folder = await asyncio.create_task(download(interaction=interaction, url=url, codec=codec, only_media=only_media, captions=captions.value if captions else None, invisible=invisible,is_spotify=is_spotify))
+    folder = await asyncio.create_task(download(interaction=interaction, url=url, format_name=codec.name, format_value=format_to_use, only_media=only_media, captions=captions.value if captions else None, invisible=invisible,is_spotify=is_spotify))
 
     # Signals that the download has finished
     self.downloads_inProgress -= 1
@@ -467,9 +465,8 @@ async def progress_hook(d: Dict, interaction: Interaction, url: str, codec: str,
 
     # ======= EMBED TO DISCORD =======
 
-    embed = Embed(title=f":arrow_up: Baixando *{video_title}*")
+    embed = Embed(description=f"## <:download:1299113329234542612> Baixando *{video_title}*")
     embed.set_thumbnail(url=thumbnail_url)
-    embed.set_author(name="Cid's Downloads")
 
     embed.add_field(name=":signal_strength: Progresso:", value=f"{progress_message}", inline=True)
     embed.add_field(name=":alarm_clock: ETA", value=f"{eta_message}", inline=True)

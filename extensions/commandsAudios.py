@@ -30,7 +30,7 @@ from utils.send_error import create_error
 class commandsAudios(commands.Cog):
   def __init__(self, bot : commands.Bot):
     self.bot = bot
-  audios = app_commands.Group(name="audios", description="Audios")
+  audios = app_commands.Group(name="audios", description="(Grupo) 🔊 Comandos de sistema de áudios. use /audios 'comando' ")
   # Utils
 
   async def is_bot_playing_in_channel(self, guild : discord.Guild, channel : discord.VoiceChannel):
@@ -152,7 +152,7 @@ class commandsAudios(commands.Cog):
                 return
             audio_path = os.path.join(AUDIO_FOLDER, random.choice(file))
         ffmpeg_options = {
-            'options': '-af loudnorm'
+            'options': f'-af "loudnorm,volume=0.7"'
             }
         audio_source = discord.FFmpegPCMAudio(audio_path,**ffmpeg_options)
         await interaction.response.send_message(f":thumbsup: Tocando agora.",ephemeral=True)

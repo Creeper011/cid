@@ -10,7 +10,6 @@ import validators
 import re
 from typing import List
 
-
 class MarkovCog(commands.Cog):
     """Cog para gerar texto baseado em cadeias de Markov a partir de mensagens recebidas."""
 
@@ -25,7 +24,7 @@ class MarkovCog(commands.Cog):
         self.key = self.load_key()
         self.cipher = Fernet(self.key)
         self.messages: List[str] = self.load_messages()
-
+    
     def load_key(self) -> bytes:
         """
         Carrega a chave de criptografia de um arquivo ou gera uma nova.
@@ -110,8 +109,13 @@ class MarkovCog(commands.Cog):
                 except Exception as e:
                     print(f"Erro ao gerar texto: {e}")
 
+    async def trigger(self) -> str:
+        text_model = markovify.Text(self.messages, state_size=1)  # acessando self.messages
+        r = text_model.make_short_sentence(max_chars=140)
+        return r
+    
     @commands.command(name="trig")
-    async def trigger(self, context: commands.Context) -> None:
+    async def triggerr(self, context: commands.Context) -> None:
         """
         Comando para forçar a geração de uma mensagem de Markov.
         """
