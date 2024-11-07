@@ -97,7 +97,7 @@ class MarkovCog(commands.Cog):
             self.save_messages()  # Salvar mensagens criptografadas
 
         if len(self.messages) > 5:  # alterar o número se necessário
-            if random.random() < 0.02:  # 2% de chance de entrar
+            if random.random() < 0.05:  # 15% de chance de entrar
                 try:
                     # cria o modelo de texto diretamente das mensagens
                     text_model = markovify.Text(self.messages, state_size=1)

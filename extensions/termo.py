@@ -25,7 +25,7 @@ class Termo(commands.Cog):
     async def reset(self, ctx):
         self.load_secret_word()
 
-    @app_commands.command(name="termo", description="[beta]")
+    @app_commands.command(name="termo", description="[Game 🎮] Jogue termo!")
     async def termo_start(self, interaction: discord.Interaction):
         await interaction.response.send_message(embed=self.create_embed(f"## 🕐 Iniciando o jogo...\n### > ⚠️ Você tem 6 tentativas e as palavras deve conter 5 letras."))
 

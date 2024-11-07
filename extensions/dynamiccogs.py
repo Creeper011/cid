@@ -15,7 +15,7 @@ class DynamicCogs(commands.Cog):
                     return f"{base_dir}.{extension_path}"
         return None
 
-    @commands.command(name="unload")
+    @commands.command(name="unload", hidden=True)
     @commands.is_owner()
     async def unload_command(self, ctx, extension_name: str):
         try:
@@ -28,7 +28,7 @@ class DynamicCogs(commands.Cog):
         except Exception as e:
             await ctx.send(f"Erro ao descarregar extensão {extension_name}: {e}")
 
-    @commands.command(name="load")
+    @commands.command(name="load", hidden=True)
     @commands.is_owner()
     async def load_command(self, ctx, extension_name: str):
         try:
@@ -39,7 +39,7 @@ class DynamicCogs(commands.Cog):
         except Exception as e:
             await ctx.send(f"Erro ao carregar extensão {extension_name}: {e}")
 
-    @commands.command(name="reload")
+    @commands.command(name="reload", hidden=True)
     @commands.is_owner()
     async def reload_command(self, ctx, extension_name: str):
         try:

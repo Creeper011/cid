@@ -90,7 +90,7 @@ class SocialCred(commands.Cog):
             embed_color = discord.Color.green()
     
         embed = discord.Embed(
-            description=f"## Crepper's Credits\nVocê tem **{credit}** social credits 🪙.", 
+            description=f"## {interaction.user.name}'s Credits\nVocê tem **{credit}** social credits 🪙.", 
             color=embed_color
         )
         embed.set_thumbnail(url=interaction.user.avatar.url)

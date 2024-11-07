@@ -36,7 +36,7 @@ class speak(commands.Cog):
           await voice_client.disconnect()
 
     else:
-        await interaction.response.send_message("⛔ Você não está em um canal de voz.")
+        await interaction.response.send_message(text, tts=True)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(speak(bot))

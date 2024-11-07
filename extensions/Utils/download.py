@@ -11,6 +11,7 @@
 # DOTENV
 # ===========================
 
+import discord
 import dotenv
 
 # ===========================
@@ -31,6 +32,7 @@ import os
 import time
 import asyncio
 import random
+import requests
 from uuid import uuid4
 from urllib.parse import urlparse
 
@@ -40,6 +42,8 @@ import validators
 
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
+
+from colorthief import ColorThief
 
 # ===========================
 # LOCAL MODULES
@@ -160,13 +164,17 @@ class DownloadCog(Cog):
       captions="Escolha a legenda preferencial que deseja baixar, caso eu não encontre, eu não baixo."
   )
   @app_commands.rename(codec="format")
-  @app_commands.commands.allowed_installs(guilds=True,users=True)
-  @app_commands.allowed_contexts(guilds=True,dms=True,private_channels=True)
+  #@app_commands.commands.allowed_installs(guilds=True,users=True)
+  #@app_commands.allowed_contexts(guilds=True,dms=True,private_channels=True)
+  @app_commands.guilds(
+    discord.Object(id=1196988300532133918),
+    discord.Object(id=1233865570156281917)
+  )
   async def downloadcommand(self, interaction: Interaction, url: str, codec: Choice[int], invisible: bool = False, only_media: bool = False, captions: Choice[str] = None) -> None:
     """A commmand to donwload videos on Youtube with different formats"""
 
     # ======= Value Codec =========
-
+    interaction.expires_at
     match codec.value:
         case 0:
           format_to_use = "bestvideo+bestaudio/best"
@@ -274,7 +282,9 @@ class DownloadCog(Cog):
 
       ydl_opts = {
         'format': format_value,
+        'throttling-rate': '500M',
         'noplaylist': True,
+        'quiet': True,
         'outtmpl': f'{os.path.join(download_folder, "%(title)s.%(ext)s")}',
         'progress_hooks': [lambda d: asyncio.run_coroutine_threadsafe(progress_hook(d, interaction, url, format_name, captions, is_spotify), loop).result()] if not only_media else [],
         'postprocessors': post if post else [
@@ -422,7 +432,7 @@ class DownloadCog(Cog):
                   for name in dirs:
                       os.rmdir(os.path.join(root, name))
               os.rmdir(folder)
-          print(f"Pasta {folder} deletada com sucesso.")
+          #print(f"Pasta {folder} deletada com sucesso.")
           break
       except Exception as e:
           print(f"Erro ao tentar deletar arquivos temporários: {e}")
@@ -432,52 +442,46 @@ class DownloadCog(Cog):
 # PROGRESS BAR
 # ============================
 
-async def progress_hook(d: Dict, interaction: Interaction, url: str, codec: str, caption: str , is_spotify: bool) -> None:
-  if d["status"] == "downloading":
-    
-    # ======= GET VARIABLES =======
-    
-    downloaded_bytes = d.get('downloaded_bytes', 0)
-    total_bytes = d.get('total_bytes', None)
-    download_speed = d.get('speed', None)
-    video_title = d.get("info_dict", {}).get("title", " ")
-    thumbnail_url = d.get("info_dict", {}).get("thumbnail", "https://static.wikia.nocookie.net/20thcenturyfox/images/a/ab/Profile_-_Sid.png/revision/latest?cb=20200501192922")
+async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, codec: str, caption: str, is_spotify: bool) -> None:
+    if d["status"] == "downloading":
+        
+        # ======= GET VARIABLES =======
+        downloaded_bytes = d.get('downloaded_bytes', 0)
+        total_bytes = d.get('total_bytes', None)
+        download_speed = d.get('speed', None)
+        video_title = d.get("info_dict", {}).get("title", " ")
+        thumbnail_url = d.get("info_dict", {}).get("thumbnail", "https://static.wikia.nocookie.net/20thcenturyfox/images/a/ab/Profile_-_Sid.png/revision/latest?cb=20200501192922")
+        
+        # ======= ANALYZING VARIABLES =======
+        if total_bytes:
+            percent = downloaded_bytes / total_bytes * 100  # Get percent of the video download
+            progress_message = f"Progresso: {percent:.2f}% concluído."
+        else:
+            percent = None
+            loading = random.choice(["✦", "✧"])
+            progress_message = f"Baixando... {downloaded_bytes / (1024 * 1024):.2f} MB baixados. {loading}"
 
-    # ======= ANALYZING VARIABLES =======
+        if download_speed and download_speed > 0 and total_bytes and total_bytes > 0:
+            estimated_time = (total_bytes - downloaded_bytes) / download_speed  # Get the Estimated Time to donwload video.
+            eta = time.strftime("%H:%M:%S", time.gmtime(estimated_time))
+            eta_message = f"ETA: {eta}."
+        else:
+            eta_message = f"ETA desconhecido."
 
-    if total_bytes:
-      percent = downloaded_bytes / total_bytes * 100 # Get percent of the video download
-      progress_message = f"Progresso: {percent:.2f}% concluído."
-    else:
-      percent = None
-      loading = random.choice(["✦","✧"])
-      progress_message = f"Baixando... {downloaded_bytes / (1024 * 1024):.2f} MB baixados. {loading}"
-    
-    if download_speed and download_speed > 0 and total_bytes and total_bytes > 0:
+        # ======= EMBED TO DISCORD =======
+        embed = Embed(description=f"## <:download:1299113329234542612> Baixando *{video_title}*")
+        embed.set_thumbnail(url=thumbnail_url)
 
-      estimated_time = (total_bytes - downloaded_bytes) / download_speed # Get the Estimated Time to donwload video.
-      eta = time.strftime("%H:%M:%S", time.gmtime(estimated_time))
-      eta_message = f"ETA: {eta}."
+        embed.add_field(name=":signal_strength: Progresso:", value=f"{progress_message}", inline=True)
+        embed.add_field(name=":alarm_clock: ETA", value=f"{eta_message}", inline=True)
+        embed.add_field(name=":information_source: Formato:", value=f"{codec}", inline=False)
+        embed.add_field(name=":page_with_curl: URL:", value=f"{url}", inline=False)
 
-    else: # If cannot calculate the ETA
-
-      eta_message = f"ETA desconhecido."
-
-    # ======= EMBED TO DISCORD =======
-
-    embed = Embed(description=f"## <:download:1299113329234542612> Baixando *{video_title}*")
-    embed.set_thumbnail(url=thumbnail_url)
-
-    embed.add_field(name=":signal_strength: Progresso:", value=f"{progress_message}", inline=True)
-    embed.add_field(name=":alarm_clock: ETA", value=f"{eta_message}", inline=True)
-    embed.add_field(name=":information_source: Formato:", value=f"{codec}", inline=False)
-    embed.add_field(name=":page_with_curl: URL:", value=f"{url}", inline=False)
-
-    # Send to Discord
-    try: # Try sending to Discord (Note: 15 min after Discord blocks the interaction)  
-      await interaction.edit_original_response(content="-# Detectei um link do Spotify. Estou procurando o mesmo nome e artista no YouTube e iniciando o download." if is_spotify == True else " ", embed=embed)
-    except Exception:
-      pass # There's nothing we can do
+        # Send to Discord
+        try:  # Try sending to Discord (Note: 15 min after Discord blocks the interaction)
+            await interaction.edit_original_response(content="-# Detectei um link do Spotify. Estou procurando o mesmo nome e artista no YouTube e iniciando o download." if is_spotify else " ", embed=embed)
+        except Exception:
+            pass  # There's nothing we can do
    
 # ======= * * ADD DOWNLOAD TO BOT * * =======
 

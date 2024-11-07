@@ -19,42 +19,35 @@ class StatusCog(commands.Cog):
         status = random.choice([discord.Status.dnd, discord.Status.idle, discord.Status.online])
         activity = random.choice([
             discord.Game(random.choice([
-                'jogo de dormir', 'hackeador de senha do vizinho', 'Zenless Zone Zero', 'Nada', 'Youtube', 
-                'jogo de comprar TV', 'Steam', 'Terraria', 'Grand Theft Auto V', 'Grand Theft Auto VI', 
-                'Stardew Valley', 'Lethal Company', 'OBS Studio', 'Doki Doki Literature Club', 'cid', 
-                'Friday Night Funkin', 'epic games', 'Minecraft', 'Dripcraft', 'Wobbly Lify', 
-                'Super Chicken Jumper', 'Dead by Daylight', 'Portal', 'Portal 2', 'Counter Strike 2',
-                'The last of us', '𒆙'
+                'cid', 'Roblox', 'Fl Studio 21'
             ])),
             discord.Activity(type=discord.ActivityType.listening, name=random.choice([
-                'ファタール - Fatal', 'BITE!', 'Shiawase', 'Static - Steve Lacy', 'Gostava Tanto De Você',
-                'Lily - Alan Walker', 'Daylight', 'Tiro Ao Álvaro', 'Sayo-Nara', 'Hayloft II', 
-                'Hayloft', 'Aggretsuko Theme', 'Mimimi'
+                'nada', 'música'
             ])),
             discord.Activity(type=discord.ActivityType.watching, name=random.choice([
-                'Youtube', 'Coisas', 'Netflix', 'Max', 'Globo', 'Anime', 'Anime do smartphone kk', 'Jujustsu Kaisen', 'Nada', 'Eu mesmo'
+                'Youtube', 'Coisas', 'Nada', 'Eu mesmo'
             ])),
             None
         ])
         await self.bot.change_presence(status=status, activity=activity)
 
-    @commands.command(name='stopSts')
+    @commands.command(name='stopSts', hidden=True)
     @commands.is_owner()
     async def stop(self, ctx):
         self.change_status.stop()
 
-    @commands.command(name='startSts')
+    @commands.command(name='startSts', hidden=True)
     @commands.is_owner()
     async def start(self, ctx):
         if not self.change_status.is_running():
             self.change_status.start()
 
-    @commands.command(name='rsSts')
+    @commands.command(name='rsSts', hidden=True)
     @commands.is_owner()
     async def restart(self, ctx):
         self.change_status.restart()
 
-    @commands.command(name='tempStatus')
+    @commands.command(name='tempStatus', hidden=True)
     @commands.is_owner()
     async def temp_status(self, ctx, status_type: str, minutes: int, *, activity_name: str):
         # Mensagem de depuração para verificar os parâmetros recebidos

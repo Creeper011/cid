@@ -11,6 +11,7 @@
 
 
 from discord import Intents
+import discord
 from discord.ext import commands
 
 # Other imports
@@ -48,6 +49,8 @@ bot = commands.Bot(command_prefix=config['Bot']['Prefix'],intents=Intents.all())
 async def on_ready():
     await Load_cogs()
     content = await bot.tree.sync()
+    await bot.tree.sync(guild=discord.Object(id=1196988300532133918))
+    await bot.tree.sync(guild=discord.Object(id=1233865570156281917))
     logging.info(f"Loaded {bot.user.name} with {len(content)} commands")
 
 async def Load_cogs():
