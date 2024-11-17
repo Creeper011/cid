@@ -8,11 +8,10 @@
 # \_______/  \______/  \_____\____/ \__|  \__|\__| \______/  \_______| \_______|
 
 # ===========================
-# DOTENV
+# I don't know anymore
 # ===========================
-
+from bs4 import BeautifulSoup
 import discord
-import dotenv
 
 # ===========================
 # IMPORT DISCORD AND TYPING
@@ -28,6 +27,8 @@ from discord.app_commands import Choice
 # IMPORTS AND EXTERNAL LIBRARIES
 # ===========================
 
+from io import BytesIO
+from colorthief import ColorThief
 import os
 import time
 import asyncio
@@ -35,6 +36,8 @@ import random
 import requests
 from uuid import uuid4
 from urllib.parse import urlparse
+
+from pydub import AudioSegment
 
 import yt_dlp
 from fuzzywuzzy import fuzz
@@ -63,6 +66,36 @@ sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
     client_secret=os.getenv("spotify_clientsecret")))
 
 # ======= FUNCTIONS =======
+
+async def async_change_speed(audio_path: str, factor: float):
+    return await asyncio.to_thread(change_speed, audio_path, factor)
+
+def change_speed(audio_path: str, factor: float) -> str:
+    if not os.path.exists(audio_path):
+        return False
+
+    try:
+        # Carrega o áudio com pydub
+        audio = AudioSegment.from_file(audio_path)
+        
+        # Alterar a taxa de frame rapidamente
+        new_frame_rate = int(audio.frame_rate * factor)
+        new_audio = audio._spawn(audio.raw_data, overrides={"frame_rate": new_frame_rate})
+
+        # Retorna ao frame_rate original, mantendo a qualidade
+        new_audio = new_audio.set_frame_rate(audio.frame_rate)
+        
+        # Define o caminho de saída
+        base_name = os.path.basename(audio_path)
+        output_path = os.path.join(os.path.dirname(audio_path), f"{factor}x - {base_name}")
+        
+        # Exporta diretamente com ffmpeg para máxima velocidade
+        new_audio.export(output_path, format="mp3", parameters=["-q:a", "2"])  # Alta qualidade com `-q:a`
+        
+        return output_path if os.path.exists(output_path) else False
+    except Exception as e:
+        print(f"Erro ao processar o áudio: {e}")
+        return False
 
 def get_spotify_info(spotify_url: str) -> Union[str, False]:
     """
@@ -128,7 +161,23 @@ def find_closest_match(filename: str, folder: str) -> Union[str, bool]:
     else:
         return False  # Return False if the folder does not exist
     
-
+def verify_adult_content(url: str) -> bool:
+   keys = ["adult", "porn", "nsfw", "18+", "sexo", "hot", "cams", "fucked", "hentai", "fap", "ai porn", "cock",
+           "futa", "milf", "bdsm"]
+   try:
+      response = requests.get(url)
+      soup = BeautifulSoup(response.text, 'html.parser')
+      content = soup.get_text().lower()
+      title = soup.title.string if soup.title else ""
+      description = soup.find("meta", {"name": "description"})
+      description = description["content"] if description else ""
+      all_content = f"{title} {description} {content}"
+      for word in keys:
+         if word in all_content:
+            return True
+      return False
+   except Exception as e:
+      return False
 # ============================
 # DOWNLOAD COMMAND CLASS
 # ============================
@@ -141,15 +190,15 @@ class DownloadCog(Cog):
       self.downloads_inProgress : int = 0
       self.maxdownloads : int = 3
 
-  @app_commands.command(name="download", description="[Utilitários 📄] Baixa URL ou pesquisa em formatos de áudios ou vídeos")
+  @app_commands.command(name="download", description="[Utilitários 📄] Baixa URL em formatos de áudios ou vídeos")
   @app_commands.choices(codec=[
-    Choice(name="best format", value=2),
     Choice(name="mp4", value=1),
     Choice(name="webm", value=2),
     Choice(name="mp3", value=3),
     Choice(name="wav", value=4)
 ])
   @app_commands.choices(captions=[
+      Choice(name="Todas disponíveis", value="all"),
       Choice(name="Português", value="pt"),  # Portuguese
       Choice(name="Japonês", value="ja"),  # Japanese
       Choice(name="Russo", value="ru"),  # Russian
@@ -161,7 +210,8 @@ class DownloadCog(Cog):
       codec="Escolha o codec do seu arquivo! se eu não achar no formato ele vai ter o codec especificado.",
       invisible="Escolha se o comando deve aparecer somente para você!",
       only_media="Escolha se você deseja ver a barra de progresso do vídeo.",
-      captions="Escolha a legenda preferencial que deseja baixar, caso eu não encontre, eu não baixo."
+      captions="Escolha a legenda preferencial que deseja baixar, caso eu não encontre, eu não baixo.",
+      speed="(Apenas arquivos de áudio) Muda a velocidade do áudio em alta qualidade."
   )
   @app_commands.rename(codec="format")
   #@app_commands.commands.allowed_installs(guilds=True,users=True)
@@ -170,25 +220,52 @@ class DownloadCog(Cog):
     discord.Object(id=1196988300532133918),
     discord.Object(id=1233865570156281917)
   )
-  async def downloadcommand(self, interaction: Interaction, url: str, codec: Choice[int], invisible: bool = False, only_media: bool = False, captions: Choice[str] = None) -> None:
+  async def downloadcommand(self, interaction: Interaction, url: str, codec: Choice[int], invisible: bool = False, only_media: bool = False, captions: Choice[str] = None, speed: app_commands.Range[float, 0.1, 2.0]=None) -> None:
     """A commmand to donwload videos on Youtube with different formats"""
 
     # ======= Value Codec =========
     interaction.expires_at
     match codec.value:
-        case 0:
+      case 1:  # MP4
           format_to_use = "bestvideo+bestaudio/best"
-          codec.name = "mp4"
-        case 1:
-            format_to_use = "bestvideo[ext=mp4][codec^=avc1]+bestaudio/best/bestvideo[ext=mp4]+bestaudio/best/bestvideo+bestaudio/best"
-        case 2:
-            format_to_use = "bestvideo[ext=webm][codec^=vp09]+bestaudio/best/bestvideo[ext=webm]+bestaudio/best/bestvideo+bestaudio/best"
-        case 3:
-            format_to_use = "bestaudio[ext=mp3]/bestaudio/best"
-        case 4:
-            format_to_use = "bestaudio[ext=wav]/bestaudio/best"
-        case _:
-            format_to_use = "bestaudio/best"
+          postprocessors = [
+              {'key': 'FFmpegVideoConvertor', 'preferedformat': 'mp4'}
+          ]
+          if captions:  # Verifica se há legendas
+              postprocessors += [
+                  {'key': 'FFmpegSubtitlesConvertor', 'format': 'srt'},
+                  {'key': 'FFmpegEmbedSubtitle'}
+              ]
+          is_audio = False
+
+      case 2:  # WebM
+          format_to_use = "bestvideo+bestaudio/best"
+          postprocessors = [
+              {'key': 'FFmpegVideoConvertor', 'preferedformat': 'webm'}
+          ]
+          if captions:  # Verifica se há legendas
+              postprocessors += [
+                  {'key': 'FFmpegSubtitlesConvertor', 'format': 'srt'},
+                  {'key': 'FFmpegEmbedSubtitle'}
+              ]
+          is_audio = False
+
+      case 3:  # MP3
+          format_to_use = "bestaudio/best"
+          postprocessors = [
+              {'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': 'best'}
+          ]
+          is_audio = True
+
+      case 4:  # WAV
+          format_to_use = "bestaudio/best"
+          postprocessors = [
+              {'key': 'FFmpegExtractAudio', 'preferredcodec': 'wav', 'preferredquality': 'best'}
+          ]
+          is_audio = True
+
+      case _:
+          return
 
     # ============================
     # SETUP
@@ -203,39 +280,38 @@ class DownloadCog(Cog):
       return
     
     if not validators.url(url):
-      embed = create_error(error="Não é uma URL", note="Tente novamente.", type="NOT_URL")
-      await interaction.response.send_message(embed=embed)
-      return
+      url =f"ytsearch:{url}"
+      yt_search=True
+    else:
+      yt_search= False
 
+    if not yt_search:
+      if verify_adult_content(url) and interaction.channel.is_nsfw():
+        embed = create_error("Use em um canal NSFW", type="NSFW_CONTENT")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
 
-    # ======= VERIFY LINK WITHOUT INFO =======
-    
-    parsed_url = urlparse(url)
+      # ======= VERIFY LINK WITHOUT INFO =======
+      
+      parsed_url = urlparse(url)
 
-    match parsed_url.netloc:
-        case _ if "twitch.tv" in parsed_url.netloc:
-            # Create a embed error
-            embed = create_error(error="Download de vídeos da twitch não são permitidos", type="ERR_LIVE")
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
+      match parsed_url.netloc:
+          case _ if "twitch.tv" in parsed_url.netloc:
+              # Create a embed error
+              embed = create_error(error="Download de vídeos da twitch não são permitidos", type="ERR_LIVE")
+              await interaction.response.send_message(embed=embed, ephemeral=True)
+              return
 
-        case _ if parsed_url.netloc.endswith(".pornhub.com") and interaction.is_guild_interaction():
-            country_code = parsed_url.netloc.split('.')[0]
-            if country_code.lower() != 'www' and not interaction.channel.is_nsfw():
-                embed = create_error("Use em um canal NSFW", type="NSFW")
-                await interaction.response.send_message(embed=embed, ephemeral=True)
-                return
-
-        case _ if parsed_url.netloc.endswith("open.spotify.com"):
-            url = get_spotify_info(url)
-            is_spotify = True
+          case _ if parsed_url.netloc.endswith("open.spotify.com"):
+              url = "ytsearch:"+get_spotify_info(url)
+              is_spotify=True
 
     # ======= VERIFY IF ONLY MEDIA =======
 
     if not only_media:
 
       title = random.choice([":small_orange_diamond: Inicializando motores..", ":arrows_counterclockwise: Carregando...", ":bookmark_tabs: Verificando."])
-      embed = Embed(title=title, colour=Colour.orange())
+      embed = Embed(title=title, colour=discord.Color.from_str("#f7a156"))
       await interaction.response.send_message(embed=embed, ephemeral=invisible) # Show progress bar
 
     else:
@@ -249,12 +325,14 @@ class DownloadCog(Cog):
     # DONWLOAD LOGIC
     # ============================
 
-    async def download(interaction: Interaction, url: str, format_name: str, format_value: str, only_media: bool, captions: str, invisible: bool, is_spotify : bool) -> str:
+    async def download(interaction: Interaction, url: str, format_name: str, format_value: str, only_media: bool, captions: str, invisible: bool, is_spotify : bool,
+                       is_audio:bool, speed: float, postprocessors: list, captions_str: str, yt_search: bool) -> str:
       """
       Asynchronous download using Asyncio
 
       :return: Download folder
       """
+
       loop = asyncio.get_event_loop()
 
       # Create a folder to download
@@ -268,46 +346,37 @@ class DownloadCog(Cog):
       # CONFIG YT-DLP OPTIONS
       # ============================
 
-      postprocessors_mp3 = [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': 'best'}]
-      postprocessors_wav = [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'wav', 'preferredquality': 'best'}]
-
-      # Check postprocess to use if it's audio
-      match format_name.lower():
-        case "mp3":
-          post = postprocessors_mp3
-        case "wav":
-          post = postprocessors_wav
-        case _:
-          post = None
+      if captions_str:
+        if not is_audio:
+          captions_str = captions_str
+        else:
+          captions_str = None
 
       ydl_opts = {
-        'format': format_value,
-        'throttling-rate': '500M',
-        'noplaylist': True,
-        'quiet': True,
-        'outtmpl': f'{os.path.join(download_folder, "%(title)s.%(ext)s")}',
-        'progress_hooks': [lambda d: asyncio.run_coroutine_threadsafe(progress_hook(d, interaction, url, format_name, captions, is_spotify), loop).result()] if not only_media else [],
-        'postprocessors': post if post else [
-            {
-                'key': 'FFmpegSubtitlesConvertor',
-                'format': 'srt'
-            },
-            {
-                'key': 'FFmpegEmbedSubtitle'
-            }
-        ] if captions else [],
-        'writesubtitles': True if captions else False,
-        'subtitleslangs': captions if captions else [],
-        'ignoreerrors': True,
+          'format': format_value,
+          'throttling-rate': '500M',
+          'noplaylist': True,
+          'outtmpl': f'{os.path.join(download_folder, "%(title)s.%(ext)s")}',
+          'progress_hooks': [
+              lambda d: asyncio.run_coroutine_threadsafe(
+                  progress_hook(d=d, interaction=interaction, url=url, codec=format_name, is_spotify=is_spotify, captions_str=captions_str), loop
+              ).result()
+          ] if not only_media else [],
+          'postprocessors': postprocessors,
+          'no_live_chat': True,
+          'writesubtitles': bool(captions),
+          'subtitleslangs': [captions] or [], 
+          'ignoreerrors': True,
+          'quiet': True,
       }
 
       # ======= Verify Link With Info =======
 
       try:
-         with yt_dlp.YoutubeDL(params=ydl_opts) as ydl:
+          with yt_dlp.YoutubeDL(params=ydl_opts) as ydl:
             
             try:
-              info = await loop.run_in_executor(None, lambda: ydl.extract_info(url if not is_spotify else f"ytsearch:{url}", download=False))
+              info = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
             except yt_dlp.utils.DownloadError as e:
               embed = create_error(
                   error=f"Erro ao verficar e baixar",
@@ -321,16 +390,29 @@ class DownloadCog(Cog):
             # ============================
             # VERIFY REQUESTED FORMAT EXISTS
             # ============================
-
+            if yt_search:
+              if 'entries' not in info or len(info['entries']) == 0:
+                embed = create_error(
+                    error=f"Erro ao buscar",
+                    note="Pesquise outro resultado",
+                    type="SEARCH_ERROR"
+                )
+                await interaction.followup.send(embed=embed, ephemeral=invisible)
+                return download_folder
             if not info: # Verify if the info exist
                 embed = create_error(
                     error=f"Erro ao verficar e baixar",
                     note="Tente novamente mais tarde",
                     type="YT_DLP_ERROR"
                 )
-                await interaction.followup.send(embed=embed)
+                await interaction.followup.send(embed=embed, ephemeral=invisible)
                 return download_folder
             
+            if 'entries' in info:
+              thumbnail = info['entries'][0].get('thumbnail', "https://static.wikia.nocookie.net/20thcenturyfox/images/a/ab/Profile_-_Sid.png/revision/latest?cb=20200501192922")
+            else:
+              thumbnail = info.get('thumbnail', "https://static.wikia.nocookie.net/20thcenturyfox/images/a/ab/Profile_-_Sid.png/revision/latest?cb=20200501192922")
+
             match info: # Verify the content
                
               case _ if info.get("is_live", False):
@@ -347,19 +429,29 @@ class DownloadCog(Cog):
             # DOWNLOAD VIDEO
             # ============================
             
-            info = await loop.run_in_executor(None, lambda: ydl.extract_info(url if not is_spotify else f"ytsearch:{url}", download=True)) 
+            info = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=True)) 
 
             # ==========================================
             # GET FILENAME AND CHECK IF EXISTS
             # ==========================================
 
             # Get the filename according to the video title to avoid errors with ytsearch
-            filepath = ydl.prepare_filename(info)
-            #filepath = os.path.join(download_folder, filename) # Get the filepath
-            
+            if 'entries' in info:
+              filepath = ydl.prepare_filename(info['entries'][0])
+            else:
+              filepath = ydl.prepare_filename(info)
+
             if not os.path.exists(filepath):
               file_name, file_extension = os.path.splitext(filepath)
               filepath = f"{file_name}.{format_name}"
+
+            if is_audio and speed: # If the user want to change the speed of audio
+              if not only_media:
+                embed = discord.Embed(description=f"## <:download:1299113329234542612> Cid's Download!\n⌛ Processando Áudio na velocidade {speed}x", color=discord.Colour.from_rgb(165, 168, 169))
+                embed.set_thumbnail(url=thumbnail)
+                await interaction.edit_original_response(embed=embed)
+
+              filepath = await async_change_speed(filepath, speed)
 
             file_size = os.path.getsize(filepath)
 
@@ -368,7 +460,7 @@ class DownloadCog(Cog):
             else:
               filesize_limit = 25_000_000 # Change to default filesizelimit
             
-            if file_size and file_size > filesize_limit: # If the file limit is so expensive to Discord
+            if file_size and file_size > filesize_limit and filepath: # If the file limit is so expensive to Discord
 
               # ======= Upload to Drive =======
 
@@ -378,7 +470,8 @@ class DownloadCog(Cog):
                 await interaction.followup.send(embed=embed,ephemeral=invisible)
                 return download_folder
                
-              embed = Embed(description=f"## <:download:1299113329234542612> Cid's Download!\n📄 Link: [Clique aqui]({link})\n```{link}```")
+              embed = Embed(description=f"## <:download:1299113329234542612> Cid's Download!\n📄 Link: [Clique aqui]({link})\n```{link}```", color=discord.Colour.from_rgb(165, 168, 169))
+              embed.set_thumbnail(url=thumbnail)
 
               try:
                 await interaction.edit_original_response(embed=embed)
@@ -415,7 +508,9 @@ class DownloadCog(Cog):
     # INIT DOWNLOAD
     # ============================
 
-    folder = await asyncio.create_task(download(interaction=interaction, url=url, format_name=codec.name, format_value=format_to_use, only_media=only_media, captions=captions.value if captions else None, invisible=invisible,is_spotify=is_spotify))
+    folder = await asyncio.create_task(download(interaction=interaction, url=url, format_name=codec.name, format_value=format_to_use, only_media=only_media,
+      captions=captions.value if bool(captions) else None, invisible=invisible,is_spotify=is_spotify, is_audio=is_audio if is_audio else False, speed=speed, postprocessors=postprocessors,
+      captions_str=captions.name if bool(captions) else None, yt_search=yt_search))
 
     # Signals that the download has finished
     self.downloads_inProgress -= 1
@@ -442,7 +537,7 @@ class DownloadCog(Cog):
 # PROGRESS BAR
 # ============================
 
-async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, codec: str, caption: str, is_spotify: bool) -> None:
+async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, codec: str, is_spotify: bool, captions_str: str= None) -> None:
     if d["status"] == "downloading":
         
         # ======= GET VARIABLES =======
@@ -452,6 +547,13 @@ async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, cod
         video_title = d.get("info_dict", {}).get("title", " ")
         thumbnail_url = d.get("info_dict", {}).get("thumbnail", "https://static.wikia.nocookie.net/20thcenturyfox/images/a/ab/Profile_-_Sid.png/revision/latest?cb=20200501192922")
         
+        entries = d.get("info_dict", {}).get("entries", [])
+        if entries:  # Se houver entradas
+            thumbnail_url = entries[0].get("thumbnail", "https://static.wikia.nocookie.net/20thcenturyfox/images/a/ab/Profile_-_Sid.png/revision/latest?cb=20200501192922")
+            video_title = entries[0].get("title", video_title)  # Atualizando o título com o da primeira entrada
+        else:
+            thumbnail_url = d.get("info_dict", {}).get("thumbnail", "https://static.wikia.nocookie.net/20thcenturyfox/images/a/ab/Profile_-_Sid.png/revision/latest?cb=20200501192922")
+
         # ======= ANALYZING VARIABLES =======
         if total_bytes:
             percent = downloaded_bytes / total_bytes * 100  # Get percent of the video download
@@ -469,19 +571,29 @@ async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, cod
             eta_message = f"ETA desconhecido."
 
         # ======= EMBED TO DISCORD =======
-        embed = Embed(description=f"## <:download:1299113329234542612> Baixando *{video_title}*")
+        embed = Embed(description=f"## <:download:1299113329234542612> Baixando *{video_title}*", color=discord.Color.from_rgb(165, 168, 169))
         embed.set_thumbnail(url=thumbnail_url)
 
-        embed.add_field(name=":signal_strength: Progresso:", value=f"{progress_message}", inline=True)
-        embed.add_field(name=":alarm_clock: ETA", value=f"{eta_message}", inline=True)
-        embed.add_field(name=":information_source: Formato:", value=f"{codec}", inline=False)
-        embed.add_field(name=":page_with_curl: URL:", value=f"{url}", inline=False)
+        embed.add_field(name=":signal_strength: Progresso:", value=progress_message, inline=True)
+        embed.add_field(name=":alarm_clock: ETA", value=eta_message, inline=True)
+        embed.add_field(name=":information_source: Formato:", value=str(codec), inline=True)
+        if captions_str:
+          embed.add_field(name=":page_facing_up: Legenda:", value=captions_str, inline=True)
+        embed.add_field(name=":page_with_curl: URL:", value=str(url) if not url.startswith("ytsearch:") else str(url[9:]), inline=False)
 
         # Send to Discord
         try:  # Try sending to Discord (Note: 15 min after Discord blocks the interaction)
             await interaction.edit_original_response(content="-# Detectei um link do Spotify. Estou procurando o mesmo nome e artista no YouTube e iniciando o download." if is_spotify else " ", embed=embed)
         except Exception:
             pass  # There's nothing we can do
+    if d["status"] == "finished":
+      embed = Embed(description="## <:download:1299113329234542612> Processando...\n :warning: Esse processo pode demorar..", color=discord.Color.from_rgb(165, 168, 169))
+      thumbnail_url = d.get("info_dict", {}).get("thumbnail", "https://static.wikia.nocookie.net/20thcenturyfox/images/a/ab/Profile_-_Sid.png/revision/latest?cb=20200501192922")
+      embed.set_thumbnail(url=thumbnail_url)
+      try:  # Try sending to Discord (Note: 15 min after Discord blocks the interaction)
+        await interaction.edit_original_response(embed=embed)
+      except Exception:
+          pass
    
 # ======= * * ADD DOWNLOAD TO BOT * * =======
 

@@ -46,6 +46,7 @@ class Drive():
                 retry_count += 1
                 print(f'error: error on uploading to drive. this is retry {retry_count}. error: {e}')
                 if retry_count < max_retry_count:
+                    self.drive = self.loginToDrive() # Create another session
                     time.sleep(2)
                 else:
                     raise
