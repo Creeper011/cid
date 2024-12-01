@@ -8,7 +8,7 @@ class CommandListCog(commands.Cog):
         self.bot = bot
 
     @app_commands.command(name="help", description="[Utilitários 📄] Mostra uma lista de todos os comandos")
-    async def show_commands(self, interaction: discord.Interaction):
+    async def show_commands(self, interaction: discord.Interaction, invisible: bool):
         """Mostra todos os comandos do bot paginados."""
         slash_commands = await self.bot.tree.fetch_commands()
         prefix_commands = [
@@ -63,10 +63,10 @@ class CommandListCog(commands.Cog):
                     await interaction.response.edit_message(embed=create_embed(pages[current_page]), view=self)
 
         # Envia a primeira página com botões
-        await interaction.response.send_message(embed=create_embed(pages[current_page]), view=PaginatorView(timeout=None), tts=True, content="Aqui está a lista de comandos:")
+        await interaction.response.send_message(embed=create_embed(pages[current_page]), view=PaginatorView(timeout=None), tts=True, content="Aqui está a lista de comandos:", ephemeral=invisible)
 
     @app_commands.command(name="ping", description="[Pong 🏓] Veja a latência do bot")
-    async def ping_command(self, interaction: discord.Interaction):
+    async def ping_command(self, interaction: discord.Interaction, invisible: bool):
         """Exibe informações detalhadas sobre o ping."""
         # Latência do websocket do bot
         ws_latency = round(self.bot.latency * 1000)
@@ -85,7 +85,7 @@ class CommandListCog(commands.Cog):
         embed.add_field(name="🌐 Latência da API", value=f"{api_latency} ms", inline=False)
         embed.set_footer(text="⚠️ Latências podem variar com a conexão.")
         
-        await interaction.followup.send(embed=embed)
+        await interaction.followup.send(embed=embed, ephemeral=invisible)
     
 
 async def setup(bot):

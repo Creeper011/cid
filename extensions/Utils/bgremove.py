@@ -2,7 +2,7 @@ import uuid
 import os
 import asyncio
 from rembg import remove
-from PIL import Image, ImageSequence
+from PIL import Image
 import io
 from colorthief import ColorThief
 import discord
@@ -10,17 +10,15 @@ from discord.ext import commands
 from discord import app_commands
 from utils.send_error import create_error
 
-# Inclui GIF nos formatos suportados
-formats = [".png", ".jpg", ".jpeg", ".webp", ".gif"]
+# Inclui apenas os formatos suportados: PNG, JPG, JPEG e WEBP
+formats = [".png", ".jpg", ".jpeg", ".webp"]
 
 class BgRemover(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @app_commands.command(name="removebg", description="[Utilitários 📄] Remove o fundo de uma imagem usando IA")
-    @app_commands.describe(image="As imagens suportadas são: PNG, JPG, JPEG, WEBP e GIF")
-    @app_commands.commands.allowed_installs(guilds=True, users=True)
-    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
+    @app_commands.describe(image="As imagens suportadas são: PNG, JPG, JPEG e WEBP")
     async def removebg(self, interaction: discord.Interaction, image: discord.Attachment, invisible: bool = False):
         await interaction.response.defer(thinking=True, ephemeral=invisible)
 
@@ -29,12 +27,12 @@ class BgRemover(commands.Cog):
 
         # Verifica se o formato é suportado pelo conteúdo
         if not self.is_valid_image_format(img_data):
-            embed = create_error("Formato não suportado ou imagem inválida.", note="Formatos: PNG, JPG, JPEG, WEBP e GIF")
+            embed = create_error("Formato não suportado ou imagem inválida.", note="Formatos: PNG, JPG, JPEG e WEBP")
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
 
         # Gera um nome único de arquivo com UUID
-        unique_filename = f"{uuid.uuid4()}.gif"  # força GIF
+        unique_filename = f"{uuid.uuid4()}.png"
 
         # Executa o processamento em uma thread separada
         output_image, dominant_color = await self.bot.loop.run_in_executor(None, self.process_image, img_data, unique_filename)
@@ -58,29 +56,16 @@ class BgRemover(commands.Cog):
     def process_image(self, img_data, unique_filename):
         # Remove o fundo da imagem
         input_image = io.BytesIO(img_data)
-        output_frames = self.remove_bg_from_gif(input_image)
-
-        # Salva o GIF processado
-        output_frames[0].save(unique_filename, save_all=True, append_images=output_frames[1:], loop=0)
-
-        # Calcula a cor dominante do primeiro frame usando um novo BytesIO
-        dominant_color = self.get_dominant_color(output_frames[0])
-
-        return output_frames, dominant_color
-
-    def remove_bg_from_gif(self, input_image):
-        # Converte o input_image para um objeto PIL
         img = Image.open(input_image)
-        frames = []
+        output_image = remove(img.convert("RGBA"))
 
-        for frame in ImageSequence.Iterator(img):
-            # Remove o fundo da imagem
-            output_frame = remove(frame.convert("RGBA"))
+        # Salva a imagem processada como PNG
+        output_image.save(unique_filename, format="PNG")
 
-            # Adiciona a frame processada à lista
-            frames.append(output_frame)
+        # Calcula a cor dominante
+        dominant_color = self.get_dominant_color(output_image)
 
-        return frames
+        return output_image, dominant_color
 
     def get_dominant_color(self, image):
         # Usa BytesIO para passar a imagem corretamente para o ColorThief
@@ -95,8 +80,6 @@ class BgRemover(commands.Cog):
         if img_data[:8] == b'\x89PNG\r\n\x1a\n':  # PNG
             return True
         elif img_data[:2] == b'\xff\xd8':  # JPEG
-            return True
-        elif img_data[:4] == b'GIF8':  # GIF
             return True
         elif img_data[:4] == b'WEBP':  # WEBP
             return True

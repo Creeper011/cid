@@ -95,33 +95,7 @@ class Vcdy(commands.Cog):
                                     inline=False)
 
                     await private_channel.send(embed=embed)
-                    
-                uid = uuid.uuid4()
-                #piadas = [
-                #    "Por que o livro de matemática se suicidou? Tinha muitos problemas.",
-                #    "O que é um vegetariano que come carne? Um ex-vegetariano.",
-                #    "Por que o relógio foi ao psicólogo? Estava com problemas de tempo.",
-                #    "O que o zero disse para o oito? Adorei seu cinto!",
-                #    "Como o eletricista se comunica? Por corrente!"
-                #]
 
-                #piada = random.choice(piadas)
-                #idioma = random.choice(['ja', 'pt', 'ru', 'de', 'en', 'fr', 'el'])
-
-               # try:
-                    #gTTS(piada, lang=idioma).save(f"output{uid}.mp3")
-                    #voice_client = await private_channel.connect()
-                    #voice_client.play(discord.FFmpegPCMAudio(f"output{uid}.mp3"), after=lambda e: os.remove(f"output{uid}.mp3"))
-
-                    #while voice_client.is_playing():
-                    #    await asyncio.sleep(0.1)
-                    #await voice_client.disconnect()
-
-                #except Exception:
-                    #os.remove(f"output{uid}.mp3")
-                    #await voice_client.disconnect()
-
-                    
         # Verifica se o membro saiu de um canal de voz dinâmico
         if before.channel is not None and before.channel.id in self.dynamic_channels:
             # Se o canal está vazio, deleta o canal

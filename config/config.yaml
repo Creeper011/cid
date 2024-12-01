@@ -1,5 +1,7 @@
 Bot:
-  Prefix: "["
+  Prefix: ">"
 Audio:
   AudioPath: "./audios"
   AudiosJson: "./assets/audios.json"
+Economy:
+  EconomyPath: "./assets/economydata.json"

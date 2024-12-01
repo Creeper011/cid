@@ -19,10 +19,13 @@ class StatusCog(commands.Cog):
         status = random.choice([discord.Status.dnd, discord.Status.idle, discord.Status.online])
         activity = random.choice([
             discord.Game(random.choice([
-                'cid', 'Roblox', 'Fl Studio 21'
+                'cid', 'Roblox', 'Fl Studio 21', "Fortnite", "Minecraft", "Zenless Zone Zero",
+                "Red Dead Redemption 2", "Genshin Impact", "Wuthering Waves", "osu!", "Undertale", "Grand Theft Auto V",
+                "PAYDAY 2", "Stardew Valley", "Lethal Company", "Counter-Strike 2", "Wobbly Life", "Honkai: Star Rail",
+                "Plague Inc: Envolved", "SUPER CHICKEN JUMPER", "Doki Doki Literature Club", "Stray"
             ])),
             discord.Activity(type=discord.ActivityType.listening, name=random.choice([
-                'nada', 'música'
+                'nada', 'música', "Spotify"
             ])),
             discord.Activity(type=discord.ActivityType.watching, name=random.choice([
                 'Youtube', 'Coisas', 'Nada', 'Eu mesmo'

@@ -17,6 +17,12 @@ class SocialCred(commands.Cog):
 
     social = app_commands.Group(name="social", description="(Grupo) 🪙 Sistema de creditos por mensagem inapropriada. Use /social 'comando' ")
 
+    def get_credit(self, guild_id: str, user_id: str):
+        if guild_id in self.creditjson and user_id in self.creditjson[guild_id]:
+            return self.creditjson[guild_id][user_id]['credits']
+        else:
+            return None
+
     def load_words(self):
         self.banned_words = {}
         with open("./assets/bannedwords.txt") as f:
