@@ -5,3 +5,5 @@ Audio:
   AudiosJson: "./assets/audios.json"
 Economy:
   EconomyPath: "./assets/economydata.json"
+Giveway:
+  VideoPath: "./videos"

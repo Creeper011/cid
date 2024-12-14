@@ -46,7 +46,7 @@ class BgRemover(commands.Cog):
         dominant_color_hex = discord.Color.from_rgb(*dominant_color)
 
         file = discord.File(unique_filename, filename=unique_filename)
-        embed = discord.Embed(color=dominant_color_hex, description="### <:img:1299132499858948217> Fundo removido!")
+        embed = discord.Embed(color=dominant_color_hex, description="### <:img:1317222541814661161> Fundo removido!")
         embed.set_image(url=f"attachment://{unique_filename}")
         await interaction.followup.send(embed=embed, file=file)
 
@@ -67,13 +67,16 @@ class BgRemover(commands.Cog):
 
         return output_image, dominant_color
 
-    def get_dominant_color(self, image):
-        # Usa BytesIO para passar a imagem corretamente para o ColorThief
-        with io.BytesIO() as output_io:
-            image.save(output_io, format="PNG")  # Salva como PNG para preservar qualidade
-            output_io.seek(0)  # Volta ao início do BytesIO
-            color_thief = ColorThief(output_io)
-            return color_thief.get_color(quality=1)
+    def get_dominant_color(self, image) -> tuple:
+        try:
+            # Usa BytesIO para passar a imagem corretamente para o ColorThief
+            with io.BytesIO() as output_io:
+                image.save(output_io, format="PNG")  # Salva como PNG para preservar qualidade
+                output_io.seek(0)  # Volta ao início do BytesIO
+                color_thief = ColorThief(output_io)
+                return color_thief.get_color(quality=1)
+        except Exception:
+           return (140, 153, 173) # sem cor
 
     def is_valid_image_format(self, img_data):
         # Verifica o tipo da imagem a partir do cabeçalho do arquivo

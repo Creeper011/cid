@@ -114,7 +114,7 @@ class MainAudio(commands.Cog):
             await voice_client.disconnect()
 
         except Exception as e:
-            logger.error(f"Exeception on AudioJoin: {e}")
+            logger.error(f"Exeception on AudioJoin: {str(e)}")
             try:
                 await voice_client.disconnect()
             except Exception:

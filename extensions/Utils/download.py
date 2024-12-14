@@ -223,12 +223,11 @@ class DownloadCog(Cog):
       quality = "Escolha a qualidade do download. Caso não disponível, será usada a melhor opção."
   )
   @app_commands.rename(codec="format")
-  #@app_commands.commands.allowed_installs(guilds=True,users=True)
-  #@app_commands.allowed_contexts(guilds=True,dms=True,private_channels=True)
-  @app_commands.guilds(
-    discord.Object(id=1196988300532133918),
-    discord.Object(id=1233865570156281917)
-  )
+  @app_commands.allowed_contexts(guilds=True,dms=True,private_channels=True)
+  #@app_commands.guilds(
+  #  discord.Object(id=1196988300532133918),
+  #  discord.Object(id=1233865570156281917)
+  #)
   async def downloadcommand(self, interaction: Interaction, url: str, codec: Choice[int], quality: Choice[str]= "best", invisible: bool = False, only_media: bool = False, captions: Choice[str] = None, speed: app_commands.Range[float, 0.1, 2.0]=None) -> None:
     """A commmand to donwload videos on Youtube with different formats"""
 
@@ -614,6 +613,14 @@ async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, cod
         else:
             eta_message = f"ETA desconhecido."
 
+        if total_bytes:
+          total_mb = total_bytes / 1_048_576
+          total_gib = total_bytes / 1_073_741_824
+          if total_gib >= 1:
+             total_arm = total_gib
+          else:
+             total_arm = total_mb
+
         match quality:
           case "best":
               emoji = "🌟"
@@ -645,9 +652,11 @@ async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, cod
         embed.add_field(name=":alarm_clock: ETA", value=eta_message, inline=True)
         embed.add_field(name=":information_source: Formato:", value=str(codec), inline=True)
         embed.add_field(name=f"{emoji} Qualidade:", value=description, inline=False)
+        if total_arm:
+           embed.add_field(name=f":jar: Tamanho estimado: {total_arm:.2f}{"Mb" if total_arm <= 1 else "Gb"}", inline=True)
         if captions_str:
           embed.add_field(name=":page_facing_up: Legenda:", value=captions_str, inline=True)
-        embed.add_field(name=":page_with_curl: URL:", value=str(url) if not url.startswith("ytsearch:") else str(url[9:]), inline=False)
+        embed.add_field(name=":page_with_curl: URL:", value=str(url) if not url.startswith("ytsearch:") else str(url[9:]), inline=True)
 
         # Send to Discord
         try:  # Try sending to Discord (Note: 15 min after Discord blocks the interaction)

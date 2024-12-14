@@ -1,3 +1,4 @@
+import random
 import discord
 from discord.ext import commands
 import json
@@ -35,6 +36,7 @@ class Counter(commands.Cog):
         if is_prime_count:
             if message.author.id == guild_info.get('prime_last_user'):
                 await message.channel.send("❌ Mesmo usuário, contagem quebrada!")
+                await message.channel.edit(topic="Contagem quebrada! Digite 2 para começar")
                 guild_info['prime_last_number'] = 0
                 guild_info['prime_last_user'] = None
                 guild_info['prime_count'] = 0
@@ -42,6 +44,7 @@ class Counter(commands.Cog):
                 return False
             if number <= guild_info.get('prime_last_number', 0):
                 await message.channel.send("❌ Contagem quebrada!")
+                await message.channel.edit(topic="Contagem quebrada! Digite 2 para começar")
                 guild_info['prime_last_number'] = 0
                 guild_info['prime_last_user'] = None
                 guild_info['prime_count'] = 0
@@ -50,6 +53,7 @@ class Counter(commands.Cog):
         else:
             if message.author.id == guild_info.get('last_user'):
                 await message.channel.send("❌ Mesmo usuário, contagem quebrada!")
+                await message.channel.edit(topic="Contagem quebrada! Digite 1 para começar")
                 guild_info['last_number'] = 0
                 guild_info['last_user'] = None
                 guild_info['count'] = 0
@@ -57,6 +61,7 @@ class Counter(commands.Cog):
                 return False
             if number != guild_info.get('last_number', 0) + 1:
                 await message.channel.send("❌ Contagem quebrada!")
+                await message.channel.edit(topic="Contagem quebrada! Digite 1 para começar")
                 guild_info['count'] = 0
                 guild_info['last_number'] = 0
                 guild_info['last_user'] = None
@@ -89,7 +94,9 @@ class Counter(commands.Cog):
             guild_info['count'] = guild_info.get('count', 0) + 1
             guild_info['last_number'] = number
             guild_info['last_user'] = message.author.id
-
+            
+            #if guild_info['count'] % random.randint(39, 48) == 0:
+            #    await message.channel.edit(topic=f"Último número: {guild_info['last_number']} | Último usuário: {self.bot.get_user(guild_info['last_user']).name}")
             # Envia mensagem a cada 5 contagens
             if guild_info['count'] % 5 == 0:
                 await message.channel.send(f"🏆 {guild_info['count']} números!")
@@ -116,7 +123,9 @@ class Counter(commands.Cog):
             guild_info['prime_count'] = guild_info.get('prime_count', 0) + 1
             guild_info['prime_last_number'] = number
             guild_info['prime_last_user'] = message.author.id
-
+            
+            #if guild_info['prime_count'] % random.randint(39, 48) == 0:
+            #    await message.channel.edit(topic=f"Último número: {guild_info['prime_last_number']} | Último usuário: {self.bot.get_user(guild_info['prime_last_user']).name}")
             # Envia mensagem a cada 15 contagens
             if guild_info['prime_count'] % 15 == 0:
                 await message.channel.send(f"🏆 {guild_info['prime_count']} números primos!")

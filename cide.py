@@ -10,6 +10,7 @@
 # Discord Imports
 
 
+import signal
 from discord import Intents
 import discord
 from discord.ext import commands
@@ -52,6 +53,29 @@ async def on_ready():
     await bot.tree.sync(guild=discord.Object(id=1196988300532133918))
     await bot.tree.sync(guild=discord.Object(id=1233865570156281917))
     logging.info(f"Loaded {bot.user.name} with {len(content)} commands")
+    for app_command in content:
+        logging.info(app_command.name)
+    await send_status(True)
+
+#@bot.event
+#async def on_disconnect():
+#    await send_status(False)
+
+async def send_status(online: bool):
+    try:
+        channel = bot.get_channel(1316082734678147152)
+        if channel is None:
+            log.error("Não foi possível encontrar o canal 1316082734678147152.")
+            return
+        
+        if online:
+            status_message = f":white_check_mark: {datetime.now().strftime("%H:%M:%S")} - O cid aqui tá ligado.\n-# O cid não avisará (por enquanto) quando ele for disconnectado forçadamente\n"
+        else:
+            status_message = f":no_entry: {datetime.now().strftime("%H:%M:%S")} - O cid está offline.\n-# O cid não avisará (por enquanto) quando ele for disconnectado forçadamente\n"
+        await channel.send(status_message)
+        log.info("Status message send succefull")
+    except Exception as e:
+        log.error(f"Error on sending status message: {str(e)}")
 
 async def Load_cogs():
     for root, dirs, files in os.walk("./extensions"):
@@ -70,10 +94,16 @@ async def Load_cogs():
                 await bot.load_extension(cog_path)
 
 # Events
+
+@bot.command(name="close")
+async def closecid(ctx: commands.Context):
+    await ctx.send("Fechando conexão")
+    await send_status(False)
+    await bot.close()
+
 @bot.event
 async def on_shard_error(shard_id, error):
     logging.error(f"Erro no shard {shard_id}: {error}")
-
 
 # Load the bot
 if env:

@@ -7,3 +7,6 @@ receiver.py
 /extensions/__pycache__
 /extensions/Utils/__pycache__
 /utils/__pycache__
+videos
+cide.bat
+.cache
