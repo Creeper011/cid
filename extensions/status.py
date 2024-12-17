@@ -22,7 +22,7 @@ class StatusCog(commands.Cog):
                 'cid', 'Roblox', 'Fl Studio 21', "Fortnite", "Minecraft", "Zenless Zone Zero",
                 "Red Dead Redemption 2", "Genshin Impact", "Wuthering Waves", "osu!", "Undertale", "Grand Theft Auto V",
                 "PAYDAY 2", "Stardew Valley", "Lethal Company", "Counter-Strike 2", "Wobbly Life", "Honkai: Star Rail",
-                "Plague Inc: Envolved", "SUPER CHICKEN JUMPER", "Doki Doki Literature Club", "Stray"
+                "Plague Inc: Envolved", "SUPER CHICKEN JUMPER", "Doki Doki Literature Club", "Stray", "99% Online"
             ])),
             discord.Activity(type=discord.ActivityType.listening, name=random.choice([
                 'nada', 'música', "Spotify"

@@ -11,7 +11,7 @@
 
 
 import signal
-from discord import Intents
+from discord import Embed, Intents
 import discord
 from discord.ext import commands
 
@@ -29,14 +29,10 @@ config = load_config()
 # Logging Config
 log = logging.getLogger(__name__)
 logging.basicConfig(
-    format='Line: %(lineno)s - %(levelname)s %(module)s | %(asctime)s | : %(message)s',
+    format='%(asctime)s | Line: %(lineno)d - %(levelname)s %(module)s: %(message)s',
     datefmt='%H:%M:%S %Y-%m-%d',
-    level=logging.INFO, 
-    #handlers=[
-    #    logging.FileHandler("./log/bot.log"),
-    #    logging.StreamHandler()
-    #]
-)
+    level=logging.INFO,
+    handlers=[logging.FileHandler("./log/bot_log.log", mode='a'), logging.StreamHandler()])
 logging.getLogger('discord.voice').setLevel(logging.CRITICAL)
 logging.getLogger('discord.gateway').setLevel(logging.CRITICAL)
 logging.getLogger('discord.player').setLevel(logging.CRITICAL)
@@ -53,8 +49,6 @@ async def on_ready():
     await bot.tree.sync(guild=discord.Object(id=1196988300532133918))
     await bot.tree.sync(guild=discord.Object(id=1233865570156281917))
     logging.info(f"Loaded {bot.user.name} with {len(content)} commands")
-    for app_command in content:
-        logging.info(app_command.name)
     await send_status(True)
 
 #@bot.event
@@ -104,6 +98,27 @@ async def closecid(ctx: commands.Context):
 @bot.event
 async def on_shard_error(shard_id, error):
     logging.error(f"Erro no shard {shard_id}: {error}")
+
+@bot.command(hidden=True)
+async def log_info(ctx: commands.Context):
+    try:
+        with open("./log/bot_log.log", 'r') as f:
+            lines = f.readlines()[-40:]  # Pega as últimas 40 linhas do log
+            log_content = ''.join(lines)
+
+        # Limita o conteúdo do log a 4096 caracteres (limite do embed)
+        if len(log_content) > 4096:
+            log_content = log_content[-4090:]  # Pega os últimos 4090 caracteres
+
+        embed = Embed(
+            title="📄 Console",
+            description=f"```bash\n{log_content}```",
+            color=0x61AFEF
+        )
+        await ctx.send(embed=embed)
+    except Exception as e:
+        log.error(f"Erro ao carregar os logs: {str(e)}")
+        await ctx.send("Não foi possível carregar os logs.")
 
 # Load the bot
 if env:

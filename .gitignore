@@ -10,3 +10,4 @@ receiver.py
 videos
 cide.bat
 .cache
+log/bot_log.log

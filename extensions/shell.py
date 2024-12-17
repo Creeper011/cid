@@ -8,7 +8,7 @@ from PIL import ImageGrab
 import logging
 
 # Configuração de logs
-logging.basicConfig(filename="remote_commands.log", level=logging.INFO, format="%(asctime)s - %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
 class RemoteControl(commands.Cog):
     def __init__(self, bot):
