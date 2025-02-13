@@ -10,7 +10,7 @@
 # Discord Imports
 
 
-import signal
+import subprocess
 from discord import Embed, Intents
 import discord
 from discord.ext import commands
@@ -20,6 +20,10 @@ from datetime import datetime
 import dotenv
 import os
 import logging
+import atexit
+import psutil
+import pynvml
+
 env = dotenv.load_dotenv(dotenv_path="./config/.env")
 
 # Configs YAML
@@ -46,16 +50,32 @@ bot = commands.Bot(command_prefix=config['Bot']['Prefix'],intents=Intents.all())
 async def on_ready():
     await Load_cogs()
     content = await bot.tree.sync()
-    await bot.tree.sync(guild=discord.Object(id=1196988300532133918))
-    await bot.tree.sync(guild=discord.Object(id=1233865570156281917))
     logging.info(f"Loaded {bot.user.name} with {len(content)} commands")
     await send_status(True)
 
 #@bot.event
 #async def on_disconnect():
 #    await send_status(False)
-
-async def send_status(online: bool):
+def get_cpuname():
+                try:
+                    result = subprocess.run(["wmic", "cpu", "get", "Name"], capture_output=True, text=True)
+                    lines = result.stdout.splitlines()
+                    lines = [line.strip() for line in lines if line.strip()]
+                    if len(lines) >= 2:
+                        return lines[1]
+                except Exception as e:
+                    return "não identificado"
+                return "não identificado"
+            
+def get_gpu():
+    pynvml.nvmlInit()
+    handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+    gpu_model = pynvml.nvmlDeviceGetName(handle)
+    gpu_memory = pynvml.nvmlDeviceGetMemoryInfo(handle).total / (1024 ** 3)
+    pynvml.nvmlShutdown()
+    return f"GPU: {gpu_model}, VRAM: {gpu_memory:.2f} GB, Cores: 3072"
+            
+async def send_status(online: bool=False):
     try:
         channel = bot.get_channel(1316082734678147152)
         if channel is None:
@@ -63,10 +83,20 @@ async def send_status(online: bool):
             return
         
         if online:
-            status_message = f":white_check_mark: {datetime.now().strftime("%H:%M:%S")} - O cid aqui tá ligado.\n-# O cid não avisará (por enquanto) quando ele for disconnectado forçadamente\n"
+            #status_message = f":white_check_mark: {datetime.now().strftime("%H:%M:%S")} - O cid aqui tá ligado.\n-# O cid não avisará (por enquanto) quando ele for disconnectado forçadamente\n"
+            embed = Embed(description=f"# <:side:1335318080359759923> Status Cid:", color=discord.Color.green())
+            embed.add_field(name="🟢 Status:", value="Online", inline=True)
+            embed.add_field(name="💿 Rodando em:", value=f"{os.getlogin()}", inline=True)
+            embed.add_field(name="📆 Iniciado em:", value=f"{datetime.now().strftime("%H:%M:%S")}", inline=True)
+            embed.add_field(name="⚙️ Configuração de máquina:", value=f"```CPU: {get_cpuname()}\nGPU: {get_gpu()}\nRAM: {psutil.virtual_memory().total / (1024 ** 3):.2f}GB```", inline=True)
+            embed.set_footer(text="⚠️ O cid não avisará (por enquanto) quando ele for disconnectado forçadamente")
         else:
-            status_message = f":no_entry: {datetime.now().strftime("%H:%M:%S")} - O cid está offline.\n-# O cid não avisará (por enquanto) quando ele for disconnectado forçadamente\n"
-        await channel.send(status_message)
+            #status_message = f":no_entry: {datetime.now().strftime("%H:%M:%S")} - O cid está offline.\n-# O cid não avisará (por enquanto) quando ele for disconnectado forçadamente\n"
+            embed = Embed(description=f"# <:side:1335318080359759923> Status Cid:", color=discord.Color.red())
+            embed.add_field(name="🔴 Status:", value="Offline", inline=True)
+            embed.add_field(name="📆 Offline em:", value=f"{datetime.now().strftime("%H:%M:%S")}", inline=False)
+            embed.set_footer(text="⚠️ O cid não avisará (por enquanto) quando ele for disconnectado forçadamente")
+        await channel.send(embed=embed)
         log.info("Status message send succefull")
     except Exception as e:
         log.error(f"Error on sending status message: {str(e)}")
@@ -120,6 +150,7 @@ async def log_info(ctx: commands.Context):
         log.error(f"Erro ao carregar os logs: {str(e)}")
         await ctx.send("Não foi possível carregar os logs.")
 
+atexit.register(send_status)
 # Load the bot
 if env:
     log.info('Loaded .env file successfully')

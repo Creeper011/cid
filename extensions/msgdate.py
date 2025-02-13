@@ -11,6 +11,7 @@ class Msgdate(commands.Cog):
             "07-09": "Feliz Independência do Brasil :flag_br: !",
             "12-10": "Feliz Dia de Nossa Senhora Aparecida! 🙏",
             "25-12": "Feliz Nataul! 🎅 ",
+            "11-12": "Feliz aniversario do chefe!"
         }
     self.send_message.start()
 

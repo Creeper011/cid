@@ -16,7 +16,7 @@ class VoiceRecorderCog(commands.Cog):
         self.file_sizes = {}  # Guarda o tamanho do arquivo em bytes por guilda
         self.drive = Drive("")
 
-    @app_commands.command(name="record", description="[Utilitários 📄] Grava os Canais de Voz")
+    @app_commands.command(name="record", description="Grava os Canais de Voz")
     @app_commands.describe(user="Usuário a ser gravado (opcional)")
     async def record(self, interaction: discord.Interaction, user: discord.User = None):
         """Inicia ou para a gravação de áudio, opcionalmente gravando apenas um usuário."""

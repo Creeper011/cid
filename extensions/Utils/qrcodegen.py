@@ -12,7 +12,7 @@ class QRCodeCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="qrcode", description="[Utilitários 📄] Faça QR codes só fornecendo um texto ou uma URL")
+    @app_commands.command(name="qrcode", description="Faça QR codes só fornecendo um texto ou uma URL")
     @app_commands.describe(
         text="Texto ou URL para gerar o QR Code.",
         logo="Imagem opcional a ser colocada no centro do QR Code.",

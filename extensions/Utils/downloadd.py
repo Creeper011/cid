@@ -46,8 +46,6 @@ import validators
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
-from colorthief import ColorThief
-
 # ===========================
 # LOCAL MODULES
 # ===========================
@@ -190,7 +188,7 @@ class DownloadCog(Cog):
       self.downloads_inProgress : int = 0
       self.maxdownloads : int = 3
 
-  @app_commands.command(name="download", description="[Utilitários ⬆️] Baixa URL ou pesquisa em formatos de áudios ou vídeos")
+  @app_commands.command(name="download", description="Baixa URL ou pesquisa em formatos de áudios ou vídeos")
   @app_commands.choices(codec=[
     Choice(name="mp4", value=1),
     Choice(name="webm", value=2),
@@ -220,17 +218,16 @@ class DownloadCog(Cog):
       only_media="Escolha se você deseja ver a barra de progresso do vídeo.",
       captions="Escolha a legenda preferencial que deseja baixar, caso eu não encontre, eu não baixo.",
       speed="(Apenas arquivos de áudio) Muda a velocidade do áudio em alta qualidade.",
-      quality = "Escolha a qualidade do download. Caso não disponível, será usada a melhor opção."
+      quality = "Escolha a qualidade do download. Caso não disponível, será usada a melhor opção.",
+      insert_infomp3="Se o formato for mp3, indexa informações do vídeo no arquivo."
   )
   @app_commands.rename(codec="format")
   @app_commands.allowed_contexts(guilds=True,dms=True,private_channels=True)
-  #@app_commands.guilds(
-  #  discord.Object(id=1196988300532133918),
-  #  discord.Object(id=1233865570156281917)
-  #)
-  async def downloadcommand(self, interaction: Interaction, url: str, codec: Choice[int], quality: Choice[str]= "best", invisible: bool = False, only_media: bool = False, captions: Choice[str] = None, speed: app_commands.Range[float, 0.1, 2.0]=None) -> None:
+  async def downloadcommand(self, interaction: Interaction, url: str, codec: Choice[int], quality: Choice[str]= "best", invisible: bool = False, only_media: bool = False, captions: Choice[str] = None, speed: app_commands.Range[float, 0.1, 2.0]=None, insert_infomp3: bool = True) -> None:
     """A commmand to donwload videos on Youtube with different formats"""
 
+    await interaction.response.defer(thinking=True, ephemeral=invisible)
+    
     # ======= Value Codec =========
     if (isinstance(quality, str) and quality != "best") or (hasattr(quality, "value") and quality.value != "best"):
         quality_parts = quality.split(" ") if isinstance(quality, str) else quality.value.split(" ")
@@ -291,7 +288,7 @@ class DownloadCog(Cog):
     # Check if there are 3 downloads occurring
     if self.downloads_inProgress == self.maxdownloads:
       embed = create_error(error="Muitos processamentos estão sendo feitos agora.", note="Tente novamente mais tarde.", type="DONWLOAD_EXCEEDED")
-      await interaction.response.send_message(embed=embed)
+      await interaction.followup.send(embed=embed)
       return
     
     if not validators.url(url):
@@ -303,7 +300,7 @@ class DownloadCog(Cog):
     if not yt_search:
       if verify_adult_content(url) and interaction.channel.is_nsfw():
         embed = create_error("Use em um canal NSFW", type="NSFW_CONTENT")
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
         return
 
       # ======= VERIFY LINK WITHOUT INFO =======
@@ -314,7 +311,7 @@ class DownloadCog(Cog):
           case _ if "twitch.tv" in parsed_url.netloc:
               # Create a embed error
               embed = create_error(error="Download de vídeos da twitch não são permitidos", type="ERR_LIVE")
-              await interaction.response.send_message(embed=embed, ephemeral=True)
+              await interaction.followup.send(embed=embed, ephemeral=True)
               return
 
           case _ if parsed_url.netloc.endswith("open.spotify.com"):
@@ -325,13 +322,10 @@ class DownloadCog(Cog):
 
     if not only_media:
 
-      title = random.choice([":small_orange_diamond: Inicializando motores..", ":arrows_counterclockwise: Carregando...", ":bookmark_tabs: Verificando.", "Carrega"])
+      title = random.choice([":small_orange_diamond: Inicializando motores..", ":arrows_counterclockwise: Carregando...", ":bookmark_tabs: Verificando."])
       embed = Embed(title=title, colour=discord.Color.from_str("#f7a156"))
-      await interaction.response.send_message(embed=embed, ephemeral=invisible) # Show progress bar
+      await interaction.followup.send(embed=embed, ephemeral=invisible) # Show progress bar
 
-    else:
-
-      await interaction.response.defer(thinking=True, ephemeral=invisible) # Send only media
 
     # Signals that a download has started
     self.downloads_inProgress += 1
@@ -341,7 +335,7 @@ class DownloadCog(Cog):
     # ============================
 
     async def download(interaction: Interaction, url: str, format_name: str, format_value: str, only_media: bool, captions: str, invisible: bool, is_spotify : bool,
-                       is_audio:bool, speed: float, postprocessors: list, captions_str: str, yt_search: bool, quality: str) -> str:
+                       is_audio:bool, speed: float, postprocessors: list, captions_str: str, yt_search: bool, quality: str, metainfo: bool) -> str:
       """
       Asynchronous download using Asyncio
 
@@ -380,12 +374,16 @@ class DownloadCog(Cog):
           ] if not only_media else [],
           'postprocessors': postprocessors,
           'no_live_chat': True,
+          'writethumbnail': True if metainfo and (format_name == "mp3") else False,
+          'parse_metadata': "playlist_index:%(track_number)s" if metainfo and (format_name == "mp3") else "",
           'writesubtitles': bool(captions),
           'subtitleslangs': [captions] or [], 
           'ignoreerrors': True,
           'quiet': True,
       }
-
+      if metainfo and (format_name == "mp3"):
+        ydl_opts['postprocessors'].append({'key': 'FFmpegMetadata'})
+        ydl_opts['postprocessors'].append({'key': 'EmbedThumbnail'})
       # ======= Verify Link With Info =======
 
       try:
@@ -463,7 +461,7 @@ class DownloadCog(Cog):
 
             if is_audio and speed: # If the user want to change the speed of audio
               if not only_media:
-                embed = discord.Embed(description=f"## <:download:1299113329234542612> Cid's Download!\n⌛ Processando Áudio na velocidade {speed}x", color=discord.Colour.from_rgb(165, 168, 169))
+                embed = discord.Embed(description=f"## <:download:1318655466909204560> Cid's Download!\n⌛ Processando Áudio na velocidade {speed}x", color=discord.Colour.from_rgb(165, 168, 169))
                 embed.set_thumbnail(url=thumbnail)
                 await interaction.edit_original_response(embed=embed)
 
@@ -474,7 +472,7 @@ class DownloadCog(Cog):
             if interaction.is_guild_integration(): # Check if the interaction is in a guild
               filesize_limit = interaction.guild.filesize_limit # Change the filesize limit to guild filesize limit
             else:
-              filesize_limit = 25_000_000 # Change to default filesizelimit
+              filesize_limit = 8_000_000 # Change to default filesizelimit
             
             if file_size and file_size > filesize_limit and filepath: # If the file limit is so expensive to Discord
 
@@ -486,7 +484,7 @@ class DownloadCog(Cog):
                 await interaction.followup.send(embed=embed,ephemeral=invisible)
                 return download_folder
                
-              embed = Embed(description=f"## <:download:1299113329234542612> Cid's Download!\n📄 Link: [Clique aqui]({link})\n```{link}```", color=discord.Colour.from_rgb(165, 168, 169))
+              embed = Embed(description=f"## <:download:1318655466909204560> Cid's Download!\n📄 Link: [Clique aqui]({link})\n```{link}```", color=discord.Colour.from_rgb(165, 168, 169))
               embed.set_thumbnail(url=thumbnail)
 
               if not interaction.is_expired():
@@ -552,7 +550,8 @@ class DownloadCog(Cog):
         postprocessors=postprocessors,
         captions_str=captions.name if bool(captions) else None,
         yt_search=yt_search,
-        quality=quality_value  # passa o valor já tratado aqui
+        quality=quality_value,
+        metainfo=insert_infomp3
     ))
 
     # Signals that the download has finished
@@ -598,7 +597,7 @@ async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, cod
             thumbnail_url = d.get("info_dict", {}).get("thumbnail", "https://static.wikia.nocookie.net/20thcenturyfox/images/a/ab/Profile_-_Sid.png/revision/latest?cb=20200501192922")
 
         # ======= ANALYZING VARIABLES =======
-        if total_bytes:
+        if total_bytes is not None:
             percent = downloaded_bytes / total_bytes * 100  # Get percent of the video download
             progress_message = f"Progresso: {percent:.2f}% concluído."
         else:
@@ -613,13 +612,14 @@ async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, cod
         else:
             eta_message = f"ETA desconhecido."
 
-        if total_bytes:
-          total_mb = total_bytes / 1_048_576
-          total_gib = total_bytes / 1_073_741_824
-          if total_gib >= 1:
-             total_arm = total_gib
-          else:
-             total_arm = total_mb
+        if total_bytes is not None:
+            total_mb = total_bytes / 1_048_576
+            total_gib = total_bytes / 1_073_741_824
+            total_arm = total_gib if total_gib >= 1 else total_mb
+            size_estimated_str = f"{total_arm:.2f} {'GB' if total_gib >= 1 else 'MB'}"
+        else:
+            total_arm = None
+            size_estimated_str = "Desconhecido"
 
         match quality:
           case "best":
@@ -645,18 +645,18 @@ async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, cod
               description = "Qualidade desconhecida"
 
         # ======= EMBED TO DISCORD =======
-        embed = Embed(description=f"## <:download:1299113329234542612> Baixando *{video_title}*", color=discord.Color.from_rgb(165, 168, 169))
+        embed = Embed(description=f"## <:download:1318655466909204560> Baixando *{video_title}*", color=discord.Color.from_rgb(165, 168, 169))
         embed.set_thumbnail(url=thumbnail_url)
 
         embed.add_field(name=":signal_strength: Progresso:", value=progress_message, inline=True)
         embed.add_field(name=":alarm_clock: ETA", value=eta_message, inline=True)
         embed.add_field(name=":information_source: Formato:", value=str(codec), inline=True)
-        embed.add_field(name=f"{emoji} Qualidade:", value=description, inline=False)
-        if total_arm:
-           embed.add_field(name=f":jar: Tamanho estimado: {total_arm:.2f}{"Mb" if total_arm <= 1 else "Gb"}", inline=True)
+        embed.add_field(name=f"{emoji} Qualidade:", value=description, inline=True)
+        if total_arm is not None:
+            embed.add_field(name=":jar: Tamanho estimado:", value=size_estimated_str, inline=True)
         if captions_str:
           embed.add_field(name=":page_facing_up: Legenda:", value=captions_str, inline=True)
-        embed.add_field(name=":page_with_curl: URL:", value=str(url) if not url.startswith("ytsearch:") else str(url[9:]), inline=True)
+        embed.add_field(name=":page_with_curl: URL:", value=str(url) if not url.startswith("ytsearch:") else str(url[9:]), inline=False)
 
         # Send to Discord
         try:  # Try sending to Discord (Note: 15 min after Discord blocks the interaction)
@@ -664,7 +664,7 @@ async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, cod
         except Exception:
             pass  # There's nothing we can do
     if d["status"] == "finished":
-      embed = Embed(description="## <:download:1299113329234542612> Processando...\n :warning: Esse processo pode demorar..", color=discord.Color.from_rgb(165, 168, 169))
+      embed = Embed(description="## <:download:1318655466909204560> Processando...\n :warning: Esse processo pode demorar..", color=discord.Color.from_rgb(165, 168, 169))
       thumbnail_url = d.get("info_dict", {}).get("thumbnail", "https://static.wikia.nocookie.net/20thcenturyfox/images/a/ab/Profile_-_Sid.png/revision/latest?cb=20200501192922")
       embed.set_thumbnail(url=thumbnail_url)
       try:  # Try sending to Discord (Note: 15 min after Discord blocks the interaction)
@@ -673,6 +673,5 @@ async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, cod
           pass
    
 # ======= * * ADD DOWNLOAD TO BOT * * =======
-
 async def setup(bot: commands.Bot):
    await bot.add_cog(DownloadCog(bot)) # Add this cog to the Bot

@@ -42,33 +42,26 @@ class Vcdy(commands.Cog):
                     }
                 )
                 await member.move_to(private_channel)
-                add_channel(guild.id, private_channel.id, 300, 5)
+                add_channel(guild.id, private_channel.id, 300, 8)
                 # Adiciona o canal dinâmico ao dicionário de canais
                 self.dynamic_channels[private_channel.id] = member.id
                 # Envia uma mensagem no canal de texto associado
-                embed = discord.Embed()
-
-                embed.set_author(name="🎉 cid calls!",
-                                icon_url=self.bot.user.avatar.url)  # isso vai pegar a foto do bot
-
-                embed.add_field(
-                    name="🤖 comandos de voz:",
-                    value=(
-                        f"\n> </audios editar:1283942481028841525> => Define o canal onde o cid vai fazer suas entradas surpresa\n"
-                        f"> </audios time:1283942481028841525> => Ajusta o intervalo de tempo para ele aparecer\n"
-                        f"> </audios force_join:1283942481028841525> => Faz o cid entrar na call e tocar um som, seja aleatório ou o que você escolheu\n"
-                        f"> </audios info:1283942481028841525> => Faz o cid mostrar as informações do Canal de Voz\n"
-                        f"> </audios duração:1283942481028841525> => Modifique a duração dos áudios, colocando um limite neles\n"
-                        f"> </audios provabilidade:1283942481028841525> => Modifique a provabilidade de entrada do Cid\n"
-                        f"> </audios view:1283942481028841525> => Veja todos os canais que o cid entra pra tocar áudios\n\n"
-                        f"📄 Extras:\n"
-                        f"> </record:1283856578134671385> => Grava as conversas na call\n"
-                        f"> </radio:1292340976311992352> => Toca radio\n"
-                        f"> </play:1299479846652739727> => Toque músicas sem link ou com link"
-                    ),
-                    inline=False
-                )
-                embed.set_footer(text="⚠️ Esse canal de voz foi adicionado no sistema de áudios. Para desabilitar use o /audios editar")
+                embed = discord.Embed(description=(
+                        f"## Cid calls 🎉\n"
+                        f"### 🤖 Comandos de Voz:"
+                        f"\n> </audios editar:1310082802007670834> => *Define o canal onde o cid vai fazer suas entradas*\n"
+                        f"> </audios time:1310082802007670834> => *Ajusta o intervalo de tempo para ele aparecer*\n"
+                        f"> </audios force_join:1310082802007670834> => *Faz o cid entrar na call e tocar um som, seja aleatório ou o que você escolheu*\n"
+                        f"> </audios info:1310082802007670834> => *Faz o cid mostrar as informações do Canal de Voz*\n"
+                        f"> </audios duração:1310082802007670834> => *Modifique a duração dos áudios, colocando um limite neles*\n"
+                        f"> </audios provabilidade:1310082802007670834> => *Modifique a provabilidade de entrada do Cid*\n"
+                        f"> </audios view:1310082802007670834> => *Veja todos os canais que o cid entra pra tocar áudios*\n"
+                        f"### Extras 📄:\n"
+                        f"> </record:1310082802133368920> => *Grava as conversas na call*\n"
+                        f"> </radio:1310082802007670840> => *Toca vários tipos de Radio*\n"
+                        f"> </play:1310082802007670839> => *Toque músicas sem link ou com link*\n"
+                    ))
+                embed.set_footer(text="⚠️ Esse canal de voz foi adicionado no sistema de áudios. Para desabilitar use o /audios editar (Alguns áudios podem ser ofensivos)")
 
                 await private_channel.send(embed=embed)
 

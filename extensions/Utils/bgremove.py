@@ -17,7 +17,7 @@ class BgRemover(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="removebg", description="[Utilitários 📄] Remove o fundo de uma imagem usando IA")
+    @app_commands.command(name="removebg", description="Remove o fundo de uma imagem usando IA")
     @app_commands.describe(image="As imagens suportadas são: PNG, JPG, JPEG e WEBP")
     async def removebg(self, interaction: discord.Interaction, image: discord.Attachment, invisible: bool = False):
         await interaction.response.defer(thinking=True, ephemeral=invisible)

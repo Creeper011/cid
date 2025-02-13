@@ -23,7 +23,7 @@ AUDIO_FOLDER = config['Audio']['AudioPath']
 
 import os
 import asyncio
-from moviepy.editor import AudioFileClip
+from moviepy.audio.io import AudioFileClip
 import random
 from utils.send_error import create_error
 
@@ -41,7 +41,7 @@ class commandsAudios(commands.Cog):
 
   # Commands
   
-  @audios.command(name="editar",description="[Audios 🔊] Remova ou adicione audios em Canais de voz com o bot")
+  @audios.command(name="editar",description="Remova ou adicione audios em Canais de voz com o bot")
 
   @app_commands.rename(function="função")
   @app_commands.rename(channel="canal")
@@ -74,7 +74,7 @@ class commandsAudios(commands.Cog):
             await interaction.response.send_message(embed=create_error(error=f"Houve um erro ao remover o canal {channel.name}",type="AUDIO_REMOVE_ERROR"))
 
 
-  @audios.command(name="duração", description="[Audios 🔊] Modifique a duração dos audios")
+  @audios.command(name="duração", description="Modifique a duração dos audios")
 
   @app_commands.rename(channel="canal")
   @app_commands.rename(duration="duração")
@@ -88,7 +88,7 @@ class commandsAudios(commands.Cog):
     else:
       await interaction.response.send_message(embed=create_error(error=f"Houve um erro ao modificar a duração dos audios.",type="AUDIO_MODIFY_ERROR"))
 
-  @audios.command(name="provabilidade", description="[Audios 🔊] Modifique a provabilidade de entrar na call")
+  @audios.command(name="provabilidade", description="Modifique a provabilidade de entrar na call")
 
   @app_commands.rename(channel="canal")
   @app_commands.rename(provability="provabilidade")
@@ -101,7 +101,7 @@ class commandsAudios(commands.Cog):
     else:
       await interaction.response.send_message(embed=create_error(error=f"Houve um erro ao modificar a provabilidade.",type="AUDIO_PROVABILITY_ERROR"))
 
-  @audios.command(name="time", description="[Audios 🔊] Modifique o tempo de Canais de vozes")
+  @audios.command(name="time", description="Modifique o tempo de Canais de vozes")
 
   @app_commands.rename(channel="canal")
   @app_commands.rename(new_time="tempo")
@@ -119,7 +119,7 @@ class commandsAudios(commands.Cog):
     else:
         await interaction.response.send_message(embed=create_error(error="Houve um erro ao modificar o tempo.", type="AUDIO_TIME_ERROR"))
 
-  @audios.command(name="force_join", description= "[Audios 🔊] Força o cid entrar na call que tu tá")
+  @audios.command(name="force_join", description= "Força o cid entrar na call que tu tá")
   @app_commands.rename(file='audio')
   @app_commands.describe(file="Defina o audio que eu vou tocar quando entrar!")
 
@@ -156,6 +156,9 @@ class commandsAudios(commands.Cog):
             }
         audio_source = discord.FFmpegPCMAudio(audio_path,**ffmpeg_options)
         await interaction.response.send_message(f":thumbsup: Tocando agora.",ephemeral=True)
+
+        await asyncio.sleep(1)
+
         voice_client.play(audio_source)
 
         audio_duration = await get_audio_duration(guild_id=interaction.guild.id, channel_id=voice_channel.id)
@@ -171,9 +174,10 @@ class commandsAudios(commands.Cog):
   @force_join.autocomplete("file")
   async def autocomplete_file(self, interaction: discord.Interaction, current: str):
         audios = [audio for audio in os.listdir(AUDIO_FOLDER) if current.lower() in audio.lower()]
+        random.shuffle(audios)
         return [Choice(name=audio, value=audio) for audio in audios[:25]] #Limit to discord
   
-  @audios.command(name="info", description="[Audios 🔊] Veja as informações do canal")
+  @audios.command(name="info", description="Veja as informações do canal")
   @app_commands.rename(channel="canal")
   @app_commands.describe(channel="Canal de voz onde a modificação será aplicada.")
   async def get_info(self, interaction : discord.Interaction, channel: discord.VoiceChannel = None):
@@ -214,7 +218,7 @@ class commandsAudios(commands.Cog):
     else:
       await interaction.response.send_message(":x: O canal não está no meu sistema")
   
-  @audios.command(name="view", description="[Audios 🔊] Veja os canais no sistema de audios")
+  @audios.command(name="view", description="Veja os canais no sistema de audios")
   async def get_all_info(self, interaction : discord.Interaction):
     channels_ids = await get_channel_ids(guild_id=interaction.guild.id)
     channels = []

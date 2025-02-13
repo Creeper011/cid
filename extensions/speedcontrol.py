@@ -14,7 +14,7 @@ class Control(commands.Cog):
   def __init__(self, bot: commands.Bot):
     self.bot = bot
   
-  @app_commands.command(name="speed", description="[Speed ⏳] Acelere ou desacelere o áudio em Alta qualidade")
+  @app_commands.command(name="speed", description="Acelere ou desacelere o áudio em Alta qualidade controlando o tom da voz")
   @app_commands.describe(factor="Escolha qual velocidade deve ser o áudio. Cid recomenda: 0,75x", attachment="Envie o arquivo que você deseja modificar o áudio", invisible="O áudio aparece apenas para você se for marcado como True")
   async def speedup(self, interaction: discord.Interaction,factor:app_commands.Range[float, 0.1, 2.0], attachment:discord.Attachment, invisible:bool=False):
     mime_type, _ = mimetypes.guess_type(attachment.filename)

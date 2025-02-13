@@ -25,7 +25,7 @@ from discord.ext import commands, tasks
 
 #- Audio
 from gtts import gTTS
-from moviepy.editor import AudioFileClip
+from moviepy.audio.io import AudioFileClip
 
 from utils.jsonAudios import *
 #---- Logging
@@ -99,6 +99,8 @@ class MainAudio(commands.Cog):
             # Cria uma fonte de áudio com o filtro
             audio_source = discord.FFmpegPCMAudio(os.path.join(AUDIO_FOLDER, audio_file), **ffmpeg_options)
             
+            await asyncio.sleep(1)
+
             # Play
             voice_client.play(audio_source)
             
@@ -134,12 +136,12 @@ class MainAudio(commands.Cog):
             provability = await get_provability(guild_id=guild.id, channel_id=channel.id)
             if not provability:
                 provability=50
-            decisionEnter = random.choices([True,False],weights=[provability, 100 - provability])
+            decisionEnter = random.choices([True,False], weights=[provability, 100 - provability])
 
             if decisionEnter:
               await self.play_audio(channel, guild)
             else:
-                decisionEnterspeak = random.choices([True,False],weights=[30, 70])
+                decisionEnterspeak = random.choices([True,False], weights=[30, 70])
                 if decisionEnterspeak:
                     message_cog = self.bot.get_cog("MarkovCog")
                     message = await message_cog.trigger()

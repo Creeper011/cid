@@ -12,7 +12,7 @@ class petpet(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="petpet", description="[Imagem 🌄] gera uma imagem de um cafuné :3")
+    @app_commands.command(name="petpet", description="Gera uma imagem de um cafuné :3")
     @app_commands.describe(url="Uma url que só tem a imagem")
     @app_commands.describe(attachment="Um arquivo")
     @app_commands.describe(user="Pega a imagem da pessoa que você citar")

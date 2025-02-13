@@ -14,13 +14,6 @@ class RemoteControl(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # Log dos comandos executados
-    async def cog_command_error(self, ctx, error):
-        if isinstance(error, commands.CheckFailure):
-            await ctx.send("Você não tem permissão para usar esse comando.")
-        else:
-            await ctx.send(f"Erro: {error}")
-
     @commands.command(hidden=True)
     @commands.is_owner()
     async def printscreen(self, ctx):
