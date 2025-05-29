@@ -17,9 +17,8 @@ class VoiceRecorderCog(commands.Cog):
         self.drive = Drive("")
 
     @app_commands.command(name="record", description="Grava os Canais de Voz")
-    @app_commands.describe(user="Usuário a ser gravado (opcional)")
-    async def record(self, interaction: discord.Interaction, user: discord.User = None):
-        """Inicia ou para a gravação de áudio, opcionalmente gravando apenas um usuário."""
+    async def record(self, interaction: discord.Interaction):
+        """Inicia ou para a gravação de áudio"""
         guild_id = interaction.guild.id
 
         if not interaction.user.voice:
@@ -39,10 +38,10 @@ class VoiceRecorderCog(commands.Cog):
         # Se não está gravando ainda, começa a gravação
         if not self.recordings.get(guild_id, False):
             # Cria um sink, passando o usuário a ser gravado (ou None para gravar todos)
-            self.sinks[guild_id] = MySink(user=user)
+            self.sinks[guild_id] = MySink()
             interaction.guild.voice_client.listen(self.sinks[guild_id])
             self.recordings[guild_id] = True
-            await interaction.response.send_message(f"🔴 Gravando{' ' + user.mention if user else ''}...")
+            await interaction.response.send_message(f"🔴 Gravando...")
         else:
             # Para a gravação
             interaction.guild.voice_client.stop_listening()

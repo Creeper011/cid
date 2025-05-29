@@ -33,6 +33,8 @@ import os
 import time
 import asyncio
 import random
+import librosa
+import soundfile as sf
 import requests
 from uuid import uuid4
 from urllib.parse import urlparse
@@ -65,32 +67,36 @@ sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
 
 # ======= FUNCTIONS =======
 
-async def async_change_speed(audio_path: str, factor: float):
-    return await asyncio.to_thread(change_speed, audio_path, factor)
+async def async_change_speed(audio_path: str, factor: float, preseve_pich: bool):
+    return await asyncio.to_thread(change_speed, audio_path, factor, preseve_pich)
 
-def change_speed(audio_path: str, factor: float) -> str:
+def change_speed(audio_path: str, factor: float, preseve_pich: bool) -> str:
     if not os.path.exists(audio_path):
         return False
-
+    base_name = os.path.basename(audio_path)
+    output_path = os.path.join(os.path.dirname(audio_path), f"{factor}x - {base_name}")
     try:
-        # Carrega o áudio com pydub
-        audio = AudioSegment.from_file(audio_path)
-        
-        # Alterar a taxa de frame rapidamente
-        new_frame_rate = int(audio.frame_rate * factor)
-        new_audio = audio._spawn(audio.raw_data, overrides={"frame_rate": new_frame_rate})
+        if not preseve_pich:
+          # Carrega o áudio com pydub
+          audio = AudioSegment.from_file(audio_path)
+          
+          # Alterar a taxa de frame rapidamente
+          new_frame_rate = int(audio.frame_rate * factor)
+          new_audio = audio._spawn(audio.raw_data, overrides={"frame_rate": new_frame_rate})
 
-        # Retorna ao frame_rate original, mantendo a qualidade
-        new_audio = new_audio.set_frame_rate(audio.frame_rate)
-        
-        # Define o caminho de saída
-        base_name = os.path.basename(audio_path)
-        output_path = os.path.join(os.path.dirname(audio_path), f"{factor}x - {base_name}")
-        
-        # Exporta diretamente com ffmpeg para máxima velocidade
-        new_audio.export(output_path, format="mp3", parameters=["-q:a", "2"])  # Alta qualidade com `-q:a`
-        
-        return output_path if os.path.exists(output_path) else False
+          # Retorna ao frame_rate original, mantendo a qualidade
+          new_audio = new_audio.set_frame_rate(audio.frame_rate)
+          
+          
+          # Exporta diretamente com ffmpeg para máxima velocidade
+          new_audio.export(output_path, format="mp3", parameters=["-q:a", "2"])  # Alta qualidade com `-q:a`
+          
+          return output_path if os.path.exists(output_path) else False
+        else:
+          y, sr = librosa.load(audio_path, sr=None)
+          y_stretched = librosa.effects.time_stretch(y, rate=factor)
+          sf.write(output_path, y_stretched, sr, format='MP3')
+          return output_path if os.path.exists(output_path) else False
     except Exception as e:
         print(f"Erro ao processar o áudio: {e}")
         return False
@@ -187,7 +193,9 @@ class DownloadCog(Cog):
       self.drive = Drive("")
       self.downloads_inProgress : int = 0
       self.maxdownloads : int = 3
-
+  @commands.command(name="resetdownload")
+  async def reset(self, ctx: commands.Context):
+     self.drive.deleteAllFiles()
   @app_commands.command(name="download", description="Baixa URL ou pesquisa em formatos de áudios ou vídeos")
   @app_commands.choices(codec=[
     Choice(name="mp4", value=1),
@@ -196,7 +204,7 @@ class DownloadCog(Cog):
     Choice(name="wav", value=4)
 ])
   @app_commands.choices(quality=[
-    Choice(name="Melhor qualidade", value="best"),
+    Choice(name="Melhor qualidade/Automático", value="best"),
     Choice(name="1080p / 320kbps", value="[height=1080] [abr=320]"),
     Choice(name="720p / 192kbps", value="[height=720] [abr=192]"),
     Choice(name="480p / 128kbps", value="[height=480] [abr=128]"),
@@ -219,11 +227,12 @@ class DownloadCog(Cog):
       captions="Escolha a legenda preferencial que deseja baixar, caso eu não encontre, eu não baixo.",
       speed="(Apenas arquivos de áudio) Muda a velocidade do áudio em alta qualidade.",
       quality = "Escolha a qualidade do download. Caso não disponível, será usada a melhor opção.",
-      insert_infomp3="Se o formato for mp3, indexa informações do vídeo no arquivo."
+      insert_infomp3="Se o formato for mp3, indexa informações do vídeo no arquivo.",
+      preserve_pich="Se o arquivo for mp3 e speed estiver preenchido, defina se o tom do áudio deve ser preservado."
   )
   @app_commands.rename(codec="format")
   @app_commands.allowed_contexts(guilds=True,dms=True,private_channels=True)
-  async def downloadcommand(self, interaction: Interaction, url: str, codec: Choice[int], quality: Choice[str]= "best", invisible: bool = False, only_media: bool = False, captions: Choice[str] = None, speed: app_commands.Range[float, 0.1, 2.0]=None, insert_infomp3: bool = True) -> None:
+  async def downloadcommand(self, interaction: Interaction, url: str, codec: Choice[int], quality: Choice[str]= "best", invisible: bool = False, only_media: bool = False, captions: Choice[str] = None, speed: app_commands.Range[float, 0.1, 2.0]=None, insert_infomp3: bool = True, preserve_pich: bool = False) -> None:
     """A commmand to donwload videos on Youtube with different formats"""
 
     await interaction.response.defer(thinking=True, ephemeral=invisible)
@@ -241,7 +250,7 @@ class DownloadCog(Cog):
       case 1:  # MP4
           format_to_use = f"bestvideo{video_quality}+bestaudio{audio_quality}/best"
           postprocessors = [
-              {'key': 'FFmpegVideoConvertor', 'preferedformat': 'mp4'}
+              {'key': 'FFmpegVideoConvertor', 'preferedformat': 'mp4'},
           ]
           if captions:  # Verifica se há legendas
               postprocessors += [
@@ -249,7 +258,7 @@ class DownloadCog(Cog):
                   {'key': 'FFmpegEmbedSubtitle'}
               ]
           is_audio = False
-
+  
       case 2:  # WebM
           format_to_use = f"bestvideo{video_quality}+bestaudio{audio_quality}/best"
           postprocessors = [
@@ -335,7 +344,7 @@ class DownloadCog(Cog):
     # ============================
 
     async def download(interaction: Interaction, url: str, format_name: str, format_value: str, only_media: bool, captions: str, invisible: bool, is_spotify : bool,
-                       is_audio:bool, speed: float, postprocessors: list, captions_str: str, yt_search: bool, quality: str, metainfo: bool) -> str:
+                       is_audio:bool, speed: float, postprocessors: list, captions_str: str, yt_search: bool, quality: str, metainfo: bool, preserve_pich: bool) -> str:
       """
       Asynchronous download using Asyncio
 
@@ -367,9 +376,13 @@ class DownloadCog(Cog):
           'throttling-rate': '500M',
           'noplaylist': True,
           'outtmpl': f'{os.path.join(download_folder, "%(title)s.%(ext)s")}',
+          'restrictfilenames': True,
+          'windowsfilenames': True,
+          'trimfilenames': 50,
           'progress_hooks': [
               lambda d: asyncio.run_coroutine_threadsafe(
-                  progress_hook(d=d, interaction=interaction, url=url, codec=format_name, is_spotify=is_spotify, captions_str=captions_str, quality=quality), loop
+                  progress_hook(d=d, interaction=interaction, url=url, codec=format_name, is_spotify=is_spotify, captions_str=captions_str, quality=quality,
+                                speed=speed, preserve_pich=preserve_pich), loop
               ).result()
           ] if not only_media else [],
           'postprocessors': postprocessors,
@@ -377,8 +390,7 @@ class DownloadCog(Cog):
           'writethumbnail': True if metainfo and (format_name == "mp3") else False,
           'parse_metadata': "playlist_index:%(track_number)s" if metainfo and (format_name == "mp3") else "",
           'writesubtitles': bool(captions),
-          'subtitleslangs': [captions] or [], 
-          'ignoreerrors': True,
+          'subtitleslangs': [captions] or [],
           'quiet': True,
       }
       if metainfo and (format_name == "mp3"):
@@ -391,10 +403,10 @@ class DownloadCog(Cog):
             
             try:
               info = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
-            except yt_dlp.utils.DownloadError as e:
+            except Exception as e:
               embed = create_error(
                   error=f"Erro ao verficar e baixar",
-                  note="Tente novamente mais tarde",
+                  note="Talvez o formato não esteja disponível",
                   type="YT_DLP_ERROR",
                   code=str(e)
               )
@@ -415,9 +427,10 @@ class DownloadCog(Cog):
                 return download_folder
             if not info: # Verify if the info exist
                 embed = create_error(
-                    error=f"Erro ao verficar e baixar",
-                    note="Tente novamente mais tarde",
-                    type="YT_DLP_ERROR"
+                  error=f"Erro ao verficar e baixar",
+                  note="Talvez o formato não esteja disponível",
+                  type="YT_DLP_ERROR",
+                  code=str(e)
                 )
                 await interaction.followup.send(embed=embed, ephemeral=invisible)
                 return download_folder
@@ -465,14 +478,14 @@ class DownloadCog(Cog):
                 embed.set_thumbnail(url=thumbnail)
                 await interaction.edit_original_response(embed=embed)
 
-              filepath = await async_change_speed(filepath, speed)
+              filepath = await async_change_speed(filepath, speed, preserve_pich)
 
             file_size = os.path.getsize(filepath)
 
             if interaction.is_guild_integration(): # Check if the interaction is in a guild
               filesize_limit = interaction.guild.filesize_limit # Change the filesize limit to guild filesize limit
             else:
-              filesize_limit = 8_000_000 # Change to default filesizelimit
+              filesize_limit = 5_000_000 # Change to default filesizelimit
             
             if file_size and file_size > filesize_limit and filepath: # If the file limit is so expensive to Discord
 
@@ -551,7 +564,8 @@ class DownloadCog(Cog):
         captions_str=captions.name if bool(captions) else None,
         yt_search=yt_search,
         quality=quality_value,
-        metainfo=insert_infomp3
+        metainfo=insert_infomp3,
+        preserve_pich=preserve_pich
     ))
 
     # Signals that the download has finished
@@ -579,7 +593,7 @@ class DownloadCog(Cog):
 # PROGRESS BAR
 # ============================
 
-async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, codec: str, is_spotify: bool, quality: str, captions_str: str= None) -> None:
+async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, codec: str, is_spotify: bool, quality: str, captions_str: str= None, speed: float=None, preserve_pich:bool=None) -> None:
     if d["status"] == "downloading":
         
         # ======= GET VARIABLES =======
@@ -624,7 +638,7 @@ async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, cod
         match quality:
           case "best":
               emoji = "🌟"
-              description = "Melhor qualidade disponível"
+              description = "Melhor qualidade / Automático"
           case "[height=1080] [abr=320]":
               emoji = "🎬"
               description = "1080p / 320kbps"
@@ -652,6 +666,9 @@ async def progress_hook(d: Dict, interaction: discord.Interaction, url: str, cod
         embed.add_field(name=":alarm_clock: ETA", value=eta_message, inline=True)
         embed.add_field(name=":information_source: Formato:", value=str(codec), inline=True)
         embed.add_field(name=f"{emoji} Qualidade:", value=description, inline=True)
+        if speed and str(codec) in ("mp3", "wav"):
+           embed.add_field(name=f"⏳ Velocidade:", value=str(speed), inline=True)
+           embed.add_field(name=f"🗣️ Preservar pitch:", value=f"{"Sim" if preserve_pich else "Não"}", inline=True)
         if total_arm is not None:
             embed.add_field(name=":jar: Tamanho estimado:", value=size_estimated_str, inline=True)
         if captions_str:

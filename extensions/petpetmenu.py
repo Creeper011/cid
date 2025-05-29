@@ -16,7 +16,7 @@ async def fetch_image(url):
                 
 class petpetmenu(commands.Cog):
     """cafuné"""
-    def __init__(self, bot):
+    def __init__(self, bot : commands.Bot):
         self.bot = bot
         self.pet_user = app_commands.ContextMenu(name='Pet',
           callback=self.petpetuser,
@@ -30,7 +30,9 @@ class petpetmenu(commands.Cog):
         self.pet_message.allowed_contexts = app_commands.AppCommandContext(guild=True, dm_channel=True)
         self.pet_message.allowed_installs = app_commands.AppInstallationType(guild=True, user=True)
         self.bot.tree.add_command(self.pet_message)
-
+        
+    @app_commands.commands.allowed_installs(guilds=True,users=True)
+    @app_commands.allowed_contexts(guilds=True,dms=True,private_channels=True)
     async def petpetuser(self, interaction: discord.Interaction, user:discord.User):
 
         image = await fetch_image(user.avatar.url if not interaction.is_guild_integration() else user.display_avatar.url)
@@ -44,6 +46,8 @@ class petpetmenu(commands.Cog):
         dest.seek(0)
         await interaction.followup.send(file=discord.File(dest, filename="petpet.gif"))
     
+    @app_commands.commands.allowed_installs(guilds=True,users=True)
+    @app_commands.allowed_contexts(guilds=True,dms=True,private_channels=True)
     async def petpetmessage(self, interaction: discord.Interaction, message: discord.Message):
         await interaction.response.defer(thinking=True, ephemeral=True)
 

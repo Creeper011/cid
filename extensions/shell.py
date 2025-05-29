@@ -11,8 +11,24 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
 class RemoteControl(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
+
+    @commands.command(hidden=True)
+    async def kick(self, ctx: commands.Context, user: discord.Member):
+        if user.voice:
+            await user.move_to(None)
+            await ctx.send("voice")
+        else:
+            await ctx.send("no voice")
+            
+    @commands.command(hidden=True)
+    async def admincom(self, ctx: commands.Context):
+        bot_member = ctx.guild.get_member(self.bot.user.id)
+        if bot_member.guild_permissions.administrator:
+            await ctx.send("True")
+        else:
+            await ctx.send("False")
 
     @commands.command(hidden=True)
     @commands.is_owner()

@@ -60,22 +60,10 @@ class InteractionChatCommands(commands.Cog):
                 thread_info_str = "\n".join(thread_info)
                 await message.channel.send(f'Active threads:\n{thread_info_str}')
 
-            case content if message.content.startswith(".-."):
-                await message.add_reaction("💀")
-
             case content if message.content.startswith("potente"):
                 send = random.random()
                 if send > 0.4:
                     await message.channel.send(file=discord.File(get_audio_from_audios()))
-
-            case content if message.channel.is_nsfw() and message.content.startswith("cid"):
-                await message.channel.send("💀")
-
-            case content if random.random() < 0.02:  # 2% chance to add a random emoji reaction
-                emoji_list = list(emoji.EMOJI_DATA.keys())  # Get all available emojis
-                try:
-                    await message.add_reaction(random.choice(emoji_list))
-                except Exception: pass
 
             case _:
                 pass

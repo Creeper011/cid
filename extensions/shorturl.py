@@ -27,7 +27,7 @@ class URLShortener(commands.Cog):
                 first_link = link
                 break
         if not first_link:
-            embed = create_error("Não foi possivel indentificar o link")
+            embed = create_error("Não foi possivel indentificar o link", type="CHECK_LINK")
             await interaction.response.send_message(embed=embed)
         else:
             api_url = "https://spoo.me"
@@ -57,32 +57,17 @@ class URLShortener(commands.Cog):
                         embed.add_field(name="URL:", value=f"```{shortened_url}```")
                         await interaction.response.send_message(embed=embed, ephemeral=True)
                     else:
-                            embed = discord.Embed(
-                                title="❗Erro:",
-                                description="Não foi possível encurtar a URL. A resposta da API não contém um link encurtado.",
-                                color=discord.Color.red()
-                            )
-                            await interaction.response.send_message(embed=embed, ephemeral=True)
+                            await interaction.response.send_message(embed=create_error("Não foi possível encurtar a URL.", type="ERROR_API"), ephemeral=True)
                 else:
                         # Trata códigos de erro específicos da API
                         error_messages = {
                             400: "A URL fornecida não é válida ou o nome personalizado é inválido. Verifique os detalhes e tente novamente.",
                         }
                         error_message = error_messages.get(response.status_code, "Erro desconhecido.")
-                        embed = discord.Embed(
-                            title="⛔ Erro:",
-                            description=f"{error_message}\nCódigo de status: {response.status_code}",
-                            color=discord.Color.red()
-                        )
-                        await interaction.response.send_message(embed=embed, ephemeral=True)
+                        await interaction.response.send_message(embed=create_error(f"{error_message}\nCódigo de status: {response.status_code}", type="REQUEST_ERROR"), ephemeral=True)
             except requests.exceptions.RequestException as e:
                 # Captura e lida com erros de requisição
-                embed = discord.Embed(
-                    title="ℹ️ Erro de Requisição",
-                    description=f"Ocorreu um erro ao encurtar a URL: {str(e)}",
-                    color=discord.Color.red()
-                )
-                await interaction.response.send_message(embed=embed, ephemeral=True)
+                await interaction.response.send_message(embed=create_error("Ocorreu um erro ao encurtar a URL", type="REQUEST_ERROR", code=str(e)), ephemeral=True)
 
     @app_commands.command(name="short", description="[Utilitários 📄] Encurta uma URL")
     @app_commands.describe(url="A URL longa que você deseja encurtar", custom_name="Nome personalizado para a URL encurtada")
@@ -92,7 +77,7 @@ class URLShortener(commands.Cog):
     async def encurtar(self, interaction: discord.Interaction, url: str, custom_name: str = '', invisible : bool = False):
         # Verifica se a URL é válida
         if not validators.url(url):
-            embed = create_error(error="A URL fornecida não é válida.")
+            embed = create_error(error="A URL fornecida não é válida.", type="NOT_A_LINK")
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
@@ -123,40 +108,24 @@ class URLShortener(commands.Cog):
                 shortened_url = result.get('short_url')
                 if shortened_url:
                     embed = discord.Embed(
-                        title="✅ URL Encurtada",
-                        description=f"URL encurtada: [Clique aqui]({shortened_url})",
-                        color=discord.Color.green()
-                    )
+                            title="✅ URL Encurtada",
+                            description=f"URL encurtada: [Clique aqui]({shortened_url})",
+                            color=discord.Color.green()
+                        )
                     embed.add_field(name="URL:", value=f"```{shortened_url}```")
-                    await interaction.response.send_message(embed=embed, ephemeral=invisible)
-                else:
-                    embed = discord.Embed(
-                        title="❗Erro:",
-                        description="Não foi possível encurtar a URL. A resposta da API não contém um link encurtado.",
-                        color=discord.Color.red()
-                    )
                     await interaction.response.send_message(embed=embed, ephemeral=True)
+                else:
+                        await interaction.response.send_message(embed=create_error("Não foi possível encurtar a URL.", type="ERROR_API"), ephemeral=True)
             else:
-                # Trata códigos de erro específicos da API
-                error_messages = {
-                    400: "A URL fornecida não é válida ou o nome personalizado é inválido. Verifique os detalhes e tente novamente.",
-                }
-                error_message = error_messages.get(response.status_code, "Erro desconhecido.")
-                embed = discord.Embed(
-                    title="⛔ Erro:",
-                    description=f"{error_message}\nCódigo de status: {response.status_code}",
-                    color=discord.Color.red()
-                )
-                await interaction.response.send_message(embed=embed, ephemeral=True)
-        
+                    # Trata códigos de erro específicos da API
+                    error_messages = {
+                        400: "A URL fornecida não é válida ou o nome personalizado é inválido. Verifique os detalhes e tente novamente.",
+                    }
+                    error_message = error_messages.get(response.status_code, "Erro desconhecido.")
+                    await interaction.response.send_message(embed=create_error(f"{error_message}\nCódigo de status: {response.status_code}", type="REQUEST_ERROR"), ephemeral=True)
         except requests.exceptions.RequestException as e:
             # Captura e lida com erros de requisição
-            embed = discord.Embed(
-                title="ℹ️ Erro de Requisição",
-                description=f"Ocorreu um erro ao encurtar a URL: {str(e)}",
-                color=discord.Color.red()
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.response.send_message(embed=create_error("Ocorreu um erro ao encurtar a URL", type="REQUEST_ERROR", code=str(e)), ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(URLShortener(bot))

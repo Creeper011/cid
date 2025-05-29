@@ -23,7 +23,7 @@ AUDIO_FOLDER = config['Audio']['AudioPath']
 
 import os
 import asyncio
-from moviepy.audio.io import AudioFileClip
+from moviepy.audio.io.AudioFileClip import AudioFileClip
 import random
 from utils.send_error import create_error
 

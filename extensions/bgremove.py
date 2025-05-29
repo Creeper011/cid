@@ -10,7 +10,6 @@ from discord.ext import commands
 from discord import app_commands
 from utils.send_error import create_error
 
-# Inclui apenas os formatos suportados: PNG, JPG, JPEG e WEBP
 formats = [".png", ".jpg", ".jpeg", ".webp"]
 
 class BgRemover(commands.Cog):

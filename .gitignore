@@ -10,3 +10,11 @@ videos
 cide.bat
 .cache
 log/bot_log.log
+desktop.ini
+temp
+cid.ico
+cide.bat
+cide.vbs
+RvcHandler
+.venv
+rvc_logs.log

@@ -1,11 +1,6 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-from gtts import gTTS
-import uuid
-import asyncio
-import os
-import random
 
 from utils.jsonAudios import *
 
@@ -105,5 +100,6 @@ class Vcdy(commands.Cog):
                 await before.channel.set_permissions(member, overwrite=None)
                 # Atualiza o nome do canal para refletir o novo dono
                 await before.channel.edit(name=f"{new_owner.display_name}'s Channel")
+                
 async def setup(bot):
     await bot.add_cog(Vcdy(bot))

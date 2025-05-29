@@ -25,7 +25,7 @@ class Drive():
         folder_id: the ID of the folder to upload the file to"""
         
         if folder_id is None:
-            folder_id = "1W3oAICJkBagfDYVohindqlqv7dAkjW7y"  # Default folder ID
+            folder_id = "1V4SV5RyMPztclV55xRZIIol874-se-1n"  # Default folder ID
 
         file_metadata = {
             'name': os.path.basename(file),
@@ -55,7 +55,7 @@ class Drive():
         """Upload all files in a folder to Google Drive and return the folder link.
         path: the path of folder to upload"""
         
-        parent_folder_id = "1W3oAICJkBagfDYVohindqlqv7dAkjW7y"  # ID da pasta pai
+        parent_folder_id = "1V4SV5RyMPztclV55xRZIIol874-se-1n"  # ID da pasta pai
         folder_name = os.path.basename(path)
         
         # Cria a nova pasta no Drive e obtém seu ID
@@ -80,3 +80,23 @@ class Drive():
         
         # Retorna o link para a nova pasta
         return f'https://drive.google.com/drive/folders/{folder_id}'
+
+    def deleteAllFiles(self, folder_id=None):
+        """Deleta TODOS os arquivos do Google Drive (sem mandar pra lixeira)."""
+
+        query = "trashed=false"
+        results = self.drive.files().list(q=query, fields="files(id, name)").execute()
+        files = results.get('files', [])
+
+        if not files:
+            print("Nenhum arquivo encontrado para deletar.")
+            return
+
+        for file in files:
+            try:
+                self.drive.files().delete(fileId=file['id']).execute()
+                print(f"Deletado: {file['name']}")
+            except Exception as e:
+                print(f"Erro ao deletar {file['name']}: {e}")
+
+        print("Todos os arquivos foram deletados.")
