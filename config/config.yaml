@@ -7,3 +7,4 @@ Economy:
   EconomyPath: "./assets/economydata.json"
 Giveway:
   VideoPath: "./videos"
+Temp: "./temp"

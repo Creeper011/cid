@@ -32,10 +32,10 @@ class speak(commands.Cog):
   @app_commands.command(name="speak", description="Faça eu dizer algo em um Canal de Voz")
   @app_commands.describe(text="O texto que eu vou dizer")
   @app_commands.describe(lang="A lingua que eu vou falar.", invisible="Escolha se o comando deve aparecer somente para você.",
-                         tune="Defina o tom de voz (-6 Mais masculino - +6 mais feminino)", model="O modelo de IA que vai ser usado")
+                         tune="Defina o tom de voz (-12 Mais masculino - +6 mais feminino)", model="O modelo de IA que vai ser usado")
   @app_commands.choices(lang=[Choice(name="Português", value="pt"), Choice(name="Russo", value="ru"), Choice(name="Japonês", value="ja"),
                               Choice(name="Inglês", value="en"), Choice(name="Alemão", value="da"), Choice(name="Espanhol", value="es")])
-  async def speake(self, interaction : discord.Interaction, text : app_commands.Range[str, 4, 300], lang : Choice[str], tune: app_commands.Range[int, -6, 6], model : str, invisible: bool= False):
+  async def speake(self, interaction : discord.Interaction, text : app_commands.Range[str, 4, 300], lang : Choice[str], tune: app_commands.Range[int, -12, 6], model : str, invisible: bool= False):
     await interaction.response.defer(thinking=True, ephemeral=invisible)
     if interaction.user.voice:
         await interaction.followup.send("Preparando áudio...")
@@ -44,6 +44,8 @@ class speak(commands.Cog):
             capture_output=True,
             text=True
         )
+        print(result.stderr)
+        print(result.stdout)
         if result.returncode != 0:
            await interaction.edit_original_response(embed=create_error(error="Houve um problema ao processar o erro", note="RVC_PROBLEM"))
            return
@@ -59,7 +61,6 @@ class speak(commands.Cog):
             except discord.ClientException or Exception:
               await interaction.edit_original_response(content=":x: Pera ae que já to tocando algo aqui")
               return
-            voice_client.wait_until_connected()
             voice_client.play(discord.FFmpegPCMAudio(output))
 
             audio_duration = AudioFileClip(output).duration

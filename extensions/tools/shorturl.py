@@ -69,7 +69,7 @@ class URLShortener(commands.Cog):
                 # Captura e lida com erros de requisição
                 await interaction.response.send_message(embed=create_error("Ocorreu um erro ao encurtar a URL", type="REQUEST_ERROR", code=str(e)), ephemeral=True)
 
-    @app_commands.command(name="short", description="[Utilitários 📄] Encurta uma URL")
+    @app_commands.command(name="short", description="Encurta uma URL")
     @app_commands.describe(url="A URL longa que você deseja encurtar", custom_name="Nome personalizado para a URL encurtada")
     @app_commands.describe(invisible="Se true, a mensagem só será vista por você")
     @app_commands.allowed_contexts(guilds=True, dms=True)

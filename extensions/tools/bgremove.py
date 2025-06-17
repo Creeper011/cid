@@ -68,10 +68,9 @@ class BgRemover(commands.Cog):
 
     def get_dominant_color(self, image) -> tuple:
         try:
-            # Usa BytesIO para passar a imagem corretamente para o ColorThief
             with io.BytesIO() as output_io:
-                image.save(output_io, format="PNG")  # Salva como PNG para preservar qualidade
-                output_io.seek(0)  # Volta ao início do BytesIO
+                image.save(output_io, format="PNG")
+                output_io.seek(0)
                 color_thief = ColorThief(output_io)
                 return color_thief.get_color(quality=1)
         except Exception:

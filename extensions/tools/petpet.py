@@ -20,7 +20,7 @@ class petpet(commands.Cog):
     @app_commands.describe(use_default_avatar="Se True, pega o avatar original do usuário")
     @app_commands.commands.allowed_installs(guilds=True,users=True)
     @app_commands.allowed_contexts(guilds=True,dms=True,private_channels=True)
-    async def petpet(self, interaction: discord.Interaction,user: discord.User = None,url: str = None,attachment: discord.Attachment = None, use_default_avatar: bool = False, invisible:bool=False):
+    async def petpet(self, interaction: discord.Interaction, user: discord.User = None,url: str = None,attachment: discord.Attachment = None, use_default_avatar: bool = False, invisible:bool=False):
         async def fetch_image(url):
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as response:

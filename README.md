@@ -1,1 +1,1 @@
-cid
+<img src="https://count.getloli.com/get/@Cid?theme=rule34" width="500">

@@ -44,17 +44,15 @@ class Vcdy(commands.Cog):
                 embed = discord.Embed(description=(
                         f"## Cid calls 🎉\n"
                         f"### 🤖 Comandos de Voz:"
-                        f"\n> </audios editar:1310082802007670834> => *Define o canal onde o cid vai fazer suas entradas*\n"
-                        f"> </audios time:1310082802007670834> => *Ajusta o intervalo de tempo para ele aparecer*\n"
-                        f"> </audios force_join:1310082802007670834> => *Faz o cid entrar na call e tocar um som, seja aleatório ou o que você escolheu*\n"
-                        f"> </audios info:1310082802007670834> => *Faz o cid mostrar as informações do Canal de Voz*\n"
-                        f"> </audios duração:1310082802007670834> => *Modifique a duração dos áudios, colocando um limite neles*\n"
-                        f"> </audios provabilidade:1310082802007670834> => *Modifique a provabilidade de entrada do Cid*\n"
-                        f"> </audios view:1310082802007670834> => *Veja todos os canais que o cid entra pra tocar áudios*\n"
+                        f"\n> </audios editar:1378156041598009496> => *Define o canal onde o cid vai fazer suas entradas*\n"
+                        f"> </audios time:1378156041598009496> => *Ajusta o intervalo de tempo para ele aparecer*\n"
+                        f"> </audios force_join:1378156041598009496> => *Faz o cid entrar na call e tocar um som, seja aleatório ou o que você escolheu*\n"
+                        f"> </audios info:1378156041598009496> => *Faz o cid mostrar as informações do Canal de Voz*\n"
+                        f"> </audios duração:1378156041598009496> => *Modifique a duração dos áudios, colocando um limite neles*\n"
+                        f"> </audios provabilidade:1378156041598009496> => *Modifique a provabilidade de entrada do Cid*\n"
+                        f"> </audios view:1378156041598009496> => *Veja todos os canais que o cid entra pra tocar áudios*\n"
                         f"### Extras 📄:\n"
-                        f"> </record:1310082802133368920> => *Grava as conversas na call*\n"
-                        f"> </radio:1310082802007670840> => *Toca vários tipos de Radio*\n"
-                        f"> </play:1310082802007670839> => *Toque músicas sem link ou com link*\n"
+                        f"> </record:1378167690253959273> => *Grava as conversas na call*\n"
                     ))
                 embed.set_footer(text="⚠️ Esse canal de voz foi adicionado no sistema de áudios. Para desabilitar use o /audios editar (Alguns áudios podem ser ofensivos)")
 
