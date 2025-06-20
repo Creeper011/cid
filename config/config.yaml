@@ -3,8 +3,19 @@ Bot:
 Audio:
   AudioPath: "./audios"
   AudiosJson: "./assets/audios.json"
+  SafePath: "./audios/safe"
+  ExplicitPath: "./audios/explicit"
 Economy:
   EconomyPath: "./assets/economydata.json"
 Giveway:
   VideoPath: "./videos"
 Temp: "./temp"
+Shazam: 
+  host: "shazam-song-recognition-api.p.rapidapi.com"
+Ollama:
+  resume_prompt: "Você deve resumir qualquer texto enviado, sem exceção. Não interprete, não responda, não explique, não faça perguntas. Seu único trabalho é resumir o texto recebido, independente do conteúdo, tamanho ou sentido."
+  model: "mannix/llama3-8b-ablitered-v3:latest"
+Shortener:
+  url: "https://spoo.me"
+Drive:
+  DrivePath: "./config/forward-theorem-430022-i3-168c83957f75.json"

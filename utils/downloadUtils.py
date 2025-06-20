@@ -10,6 +10,8 @@ from pydub import AudioSegment
 from fuzzywuzzy import fuzz
 import spotipy
 import soundfile as sf
+from cide import load_config
+config = load_config()
 
 async def async_change_speed(audio_path: str, factor: float, preseve_pich: bool):
     return await asyncio.to_thread(change_speed, audio_path, factor, preseve_pich)
@@ -73,7 +75,7 @@ def create_folder() -> Union[str, False]:
     """
     try:
         name = str(uuid4()) # Generate a random name
-        folder = os.path.join("temp", name)
+        folder = os.path.join(config["Temp"], name)
         os.makedirs(folder, exist_ok=True) # Create the folder
         return folder
     except Exception:

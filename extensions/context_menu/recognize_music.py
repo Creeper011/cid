@@ -11,10 +11,12 @@ from colorthief import ColorThief
 import urllib
 
 from utils.send_error import create_error
+from cide import load_config
+config = load_config()
 
 headers = {
     "x-rapidapi-key": os.getenv("SHAZAM"),
-    "x-rapidapi-host": "shazam-song-recognition-api.p.rapidapi.com"
+    "x-rapidapi-host": config["Shazam"]["host"],
 }
 
 class RecognizeMusic(commands.Cog):

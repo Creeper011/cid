@@ -3,6 +3,8 @@ import time
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.oauth2 import service_account
+from cide import load_config
+config = load_config()
 
 class Drive():
     """Google Drive Utils"""
@@ -12,7 +14,7 @@ class Drive():
         self.drive = self.loginToDrive()
     
     def loginToDrive(self):
-        drive_path = "./assets/forward-theorem-430022-i3-a714cc8d479b.json"
+        drive_path = config['Drive']['DrivePath']
         if os.path.exists(drive_path):
             creds = service_account.Credentials.from_service_account_file(drive_path, scopes=["https://www.googleapis.com/auth/drive.file"])
             return build('drive', 'v3', credentials=creds)

@@ -18,7 +18,7 @@ def save_data(data):
     with open(FILENAME, 'w') as file:
         json.dump(data, file, indent=4)
 
-def add_channel(guild_id: int, channel_id: int, duration: int, audio_duration: int = None, provability: int = 50):
+def add_channel(guild_id: int, channel_id: int, duration: int, audio_duration: int = None, provability: int = 50, explicit: bool = False):
     """Add a new Audio Channel to bot Enter
     
     ### Atributtes:
@@ -27,6 +27,7 @@ def add_channel(guild_id: int, channel_id: int, duration: int, audio_duration: i
     Duration : Int
     Audio Duration : Int or None
     Provability : Int
+    Explicit : Bool
     """
     data = load_data()
     if str(guild_id) not in data:
@@ -34,7 +35,8 @@ def add_channel(guild_id: int, channel_id: int, duration: int, audio_duration: i
     data[str(guild_id)][str(channel_id)] = {
         "duration": duration,
         "audio_duration": audio_duration,
-        "provability": provability
+        "provability": provability,
+        "explicit": explicit
     }
     save_data(data)
 
@@ -125,6 +127,25 @@ def modify_provability(guild_id: int, channel_id: int, new_provability: int):
     else:
         return False
     
+def modify_explicit(guild_id: int, channel_id: int, explicit: bool):
+    """Modify explicit flag of a Audio Channel
+    
+    ### Atributtes:
+    Guild Id : int
+    Channel Id : int
+    Explicit : bool
+    
+    ### Returns:
+    True if success
+    False if fail"""
+    data = load_data()
+    if str(guild_id) in data and str(channel_id) in data[str(guild_id)]:
+        data[str(guild_id)][str(channel_id)]["explicit"] = explicit
+        save_data(data)
+        return True
+    else:
+        return False
+
 async def get_channel_duration(guild_id: int, channel_id: int):
     """Get time of a Audio Channel to bot enter
     
@@ -197,3 +218,18 @@ async def get_channel_ids(guild_id: int):
         return list(data[str(guild_id)].keys())
     else:
         return None
+
+def is_explicit(guild_id: int, channel_id: int) -> bool:
+    """Check if the channel is marked as explicit.
+    
+    ### Atributtes:
+    Guild Id : int
+    Channel Id : int
+    
+    ### Returns:
+    True if explicit, False otherwise.
+    """
+    data = load_data()
+    if str(guild_id) in data and str(channel_id) in data[str(guild_id)]:
+        return data[str(guild_id)][str(channel_id)].get("explicit", False)
+    return False

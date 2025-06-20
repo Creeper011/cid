@@ -37,7 +37,7 @@ class Vcdy(commands.Cog):
                     }
                 )
                 await member.move_to(private_channel)
-                add_channel(guild.id, private_channel.id, 300, 8)
+                add_channel(guild.id, private_channel.id, 300, 8, explicit=True)
                 # Adiciona o canal dinâmico ao dicionário de canais
                 self.dynamic_channels[private_channel.id] = member.id
                 # Envia uma mensagem no canal de texto associado
@@ -63,6 +63,7 @@ class Vcdy(commands.Cog):
                     duration = await get_channel_duration(guild_id=guild.id, channel_id=private_channel.id)
                     audio_duration = await get_audio_duration(guild_id=guild.id, channel_id=private_channel.id)
                     provability = await get_provability(guild_id=guild.id, channel_id=private_channel.id)
+                    explicit = is_explicit(guild_id=guild.id, channel_id=private_channel.id)
 
                     embed = discord.Embed(title=f"📈 Informações do canal: {private_channel.name}")
                     embed.add_field(name="🕑 Tempo",
@@ -78,6 +79,9 @@ class Vcdy(commands.Cog):
                         )
                     embed.add_field(name="🎲 Provabilidade",
                                     value=str(provability)+"%",
+                                    inline=False)
+                    embed.add_field(name="🔞 Explícito",
+                                    value="Sim" if explicit else "Não",
                                     inline=False)
 
                     await private_channel.send(embed=embed)

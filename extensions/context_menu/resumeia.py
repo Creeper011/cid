@@ -3,7 +3,9 @@ from discord.ext import commands
 from discord import app_commands
 from ollama import AsyncClient, ChatResponse
 from utils.send_error import create_error
-                
+from cide import load_config
+config = load_config()
+
 class Resume(commands.Cog):
     def __init__(self, bot : commands.Bot):
         self.bot = bot
@@ -23,9 +25,7 @@ class Resume(commands.Cog):
                 {
                     'role': 'system',
                     'content': (
-                        "Você deve resumir qualquer texto enviado a você, sem exceção. "
-                        "Não interprete, não responda, não explique, não faça perguntas. "
-                        "Seu único trabalho é resumir o texto recebido, independente do conteúdo, tamanho ou sentido. "
+                        config["Ollama"]["resume_prompt"]
                     )
                 },
                 {
@@ -33,7 +33,7 @@ class Resume(commands.Cog):
                     'content': message
                 }
             ]
-            response = await AsyncClient().chat(model='mannix/llama3-8b-ablitered-v3:latest', messages=message)
+            response = await AsyncClient().chat(model=config["Ollama"]["model"], messages=message)
             return response
 
         if not message.content:

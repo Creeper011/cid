@@ -50,6 +50,9 @@ class VoiceRecorderCog(commands.Cog):
             all_start_times = [
                 chunks[0][0] for chunks in sink.user_audio.values() if chunks
             ]
+            all_end_times = [
+                chunks[-1][0] for chunks in sink.user_audio.values() if chunks
+            ]
             if not all_start_times:
                 await interaction.followup.send("⚠️ Nenhum áudio capturado.")
                 self.recordings[guild_id] = False
@@ -57,8 +60,13 @@ class VoiceRecorderCog(commands.Cog):
                 return
 
             global_start_time = min(all_start_times)
-            user_segments = []
+            global_end_time = max(all_end_times)
+            total_duration_ms = int((global_end_time - global_start_time) * 1000)
 
+            # Crie um segmento de silêncio do tamanho total
+            base_segment = AudioSegment.silent(duration=total_duration_ms + 2000, frame_rate=48000).set_channels(2)
+
+            # Sobreponha cada áudio na posição correta
             for user_id, chunks in sink.user_audio.items():
                 if not chunks:
                     continue
@@ -73,18 +81,11 @@ class VoiceRecorderCog(commands.Cog):
                     channels=2
                 )
 
-                offset_ms = (first_time - global_start_time) * 1000
-                silence = AudioSegment.silent(duration=offset_ms, frame_rate=48000).set_channels(2)
-                padded_segment = silence + segment
-
-                user_segments.append(padded_segment)
-
-            final_audio = user_segments[0]
-            for seg in user_segments[1:]:
-                final_audio = final_audio.overlay(seg)
+                offset_ms = int((first_time - global_start_time) * 1000)
+                base_segment = base_segment.overlay(segment, position=offset_ms)
 
             mp3_path = os.path.join(temp_dir, "audio.mp3")
-            final_audio.export(mp3_path, format="mp3")
+            base_segment.export(mp3_path, format="mp3")
 
             file_size = os.path.getsize(mp3_path)
             file_size_limit = interaction.guild.filesize_limit if interaction.is_guild_integration() else 25_000_000

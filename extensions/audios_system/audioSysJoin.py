@@ -28,17 +28,17 @@ from gtts import gTTS
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 
 from utils.jsonAudios import *
+
 #---- Logging
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 #- Config
 
 from utils.loadconfig import load_config
 
+is_debug = os.environ.get("CID_DEBUG", "false") == "true"
 config = load_config()
-
 AUDIO_FOLDER = config['Audio']['AudioPath']
 
 class MainAudio(commands.Cog):
@@ -81,31 +81,41 @@ class MainAudio(commands.Cog):
         if channel_exists(guild_id=channel.guild.id, channel_id=channel.id):
             remove_channel(guild_id=channel.guild.id, channel_id=channel.id)
 
-    async def play_audio(self, channel : discord.VoiceChannel, guild: discord.Guild):
-        audio_files = [f for f in os.listdir(AUDIO_FOLDER) if os.path.isfile(os.path.join(AUDIO_FOLDER, f))]
+    async def play_audio(self, channel : discord.VoiceChannel, guild: discord.Guild, allow_explicit: bool = False):
+        safe_folder = os.path.join(AUDIO_FOLDER, "safe")
+        explicit_folder = os.path.join(AUDIO_FOLDER, "explicit")
+
+        # List audio files based on explicit flag
+        safe_files = [os.path.join(safe_folder, f) for f in os.listdir(safe_folder) if os.path.isfile(os.path.join(safe_folder, f))]
+        explicit_files = [os.path.join(explicit_folder, f) for f in os.listdir(explicit_folder) if os.path.isfile(os.path.join(explicit_folder, f))]
+
+        audio_files = safe_files + explicit_files if allow_explicit else safe_files
+
         if not audio_files:
             return
+
         audio_file = random.choice(audio_files)
+        if is_debug:
+            logger.info(f"Audio: {audio_file}")
         try:
             voice_client = await channel.connect()
 
             # Waits until is playing audio
             await self.wait_until_playing(voice_client)
 
-            # Creates a audio source
+            # Creates an audio source
             ffmpeg_options = {
-            'options': f'-af "loudnorm,volume=0.7"'
+                'options': f'-af "loudnorm,volume=0.7"'
             }
-            # Cria uma fonte de áudio com o filtro
-            audio_source = discord.FFmpegPCMAudio(os.path.join(AUDIO_FOLDER, audio_file), **ffmpeg_options)
-            
+            audio_source = discord.FFmpegPCMAudio(audio_file, **ffmpeg_options)
+
             await asyncio.sleep(1)
 
             # Play
             voice_client.play(audio_source)
-            
+
             audio_duration = await get_audio_duration(guild_id=guild.id, channel_id=channel.id)
-            audio_file_duration = AudioFileClip(os.path.join(AUDIO_FOLDER, audio_file)).duration
+            audio_file_duration = AudioFileClip(audio_file).duration
 
             if audio_duration:
                 await asyncio.sleep(min(audio_duration, audio_file_duration))
@@ -116,7 +126,7 @@ class MainAudio(commands.Cog):
             await voice_client.disconnect()
 
         except Exception as e:
-            logger.error(f"Exeception on AudioJoin: {str(e)}")
+            logger.error(f"Exception on AudioJoin: {str(e)}")
             try:
                 await voice_client.disconnect()
             except Exception:
@@ -124,22 +134,19 @@ class MainAudio(commands.Cog):
             pass
 
     async def decide_and_join_channel(self, channel: discord.VoiceChannel, guild : discord.Guild):
-        
-        #- Check if have guild
-
+        # Check if bot is already playing in the channel
         if await self.is_bot_playing_in_channel(guild, channel):
             return
-        
         # Logic to Enter
-
         if len(channel.members) >= 1:
             provability = await get_provability(guild_id=guild.id, channel_id=channel.id)
             if not provability:
-                provability=50
-            decisionEnter = random.choices([True,False], weights=[provability, 100 - provability])
-
+                provability = 50
+            decisionEnter = random.choices([True, False], weights=[provability, 100 - provability])
             if decisionEnter:
-              await self.play_audio(channel, guild)
+                # Busca se o canal permite explícito
+                allow_explicit = is_explicit(guild_id=guild.id, channel_id=channel.id)
+                await self.play_audio(channel, guild, allow_explicit=allow_explicit)
             else:
                 return
 

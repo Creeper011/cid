@@ -15,15 +15,21 @@ from utils.loadconfig import load_config
 config = load_config()
 
 def get_audio_from_audios() -> str:
-    """Return a random audio with fullpath"""
-    file_path = config['Audio']['AudioPath']
+    """Return a random audio from safe or explicit folder with fullpath"""
+    safe_path = config['Audio']['SafePath']
+    explicit_path = config['Audio']['ExplicitPath']
     files = []
 
-    for file in os.listdir(file_path):
-        full_file_path = os.path.join(file_path, file)
-        if os.path.isfile(full_file_path):
-            files.append(full_file_path)
+    # List all files in safe and explicit folders
+    for folder in [safe_path, explicit_path]:
+        if os.path.exists(folder):
+            for file in os.listdir(folder):
+                full_file_path = os.path.join(folder, file)
+                if os.path.isfile(full_file_path):
+                    files.append(full_file_path)
 
+    if not files:
+        return None
     random_file = random.choice(files)
     return random_file
 

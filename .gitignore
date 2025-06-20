@@ -18,3 +18,5 @@ cide.vbs
 RvcHandler
 .venv
 rvc_logs.log
+/config/forward-theorem-430022-i3-168c83957f75.json
+.gitignore

@@ -5,6 +5,8 @@ from discord import app_commands
 import requests
 import validators
 from utils.send_error import create_error
+from cide import load_config
+config = load_config()
 
 class URLShortener(commands.Cog):
     def __init__(self, bot):
@@ -30,7 +32,7 @@ class URLShortener(commands.Cog):
             embed = create_error("Não foi possivel indentificar o link", type="CHECK_LINK")
             await interaction.response.send_message(embed=embed)
         else:
-            api_url = "https://spoo.me"
+            api_url = config["Shortener"]["url"]
             payload = {
                 "url": first_link,
                 "alias": None
