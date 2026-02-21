@@ -1,0 +1,15 @@
+include { .env }
+
+"> the yumly lang is an mvp.. and i gonna add other config <"
+(app) {
+    name = "Cid",
+    version = "0.1.0",
+    (discord) {
+        token ;string = $["TOKEN"],
+        prefix = "!"
+    }
+    (audios) {
+        audio_path ;string = "./audios",
+        audios_database ;string = "./audios/audios.json"
+    }
+}
