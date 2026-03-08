@@ -18,7 +18,7 @@ class YumlyConfigLoader():
     def _load_yaml_data(self) -> dict[str, Any]:
         self.logger.debug("Loading Yumly config from: %s", self.yumly_path.resolve())
         try: 
-            data = yumly.Yumly(str(self.yumly_path)).load()
+            data = yumly.Yumly().load(str(self.yumly_path))
             self.logger.debug("Loaded Yumly data: %s", data)
             return data
         
@@ -48,5 +48,9 @@ class YumlyConfigLoader():
             config=DaciteConfig(check_types=False)
         )
         
-        model = ConfigModel(discord=discord_config_obj)
+        model = from_dict(
+            data_class=ConfigModel,
+            data={**app_data, "discord": discord_config_obj},
+            config=DaciteConfig(check_types=False)
+        )
         return model

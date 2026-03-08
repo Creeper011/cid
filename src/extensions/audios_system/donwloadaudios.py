@@ -29,7 +29,7 @@ class DownloadAudios(commands.Cog):
                             await message.channel.send(f":warning: Arquivo já existe: {attachment.filename[:1000]}")
                             continue
 
-                        await attachment.save(file_path)
+                        await attachment.save(file_path) # type: ignore
                         
                         # Verificar a duração do áudio
                         audio = AudioSegment.from_file(file_path)

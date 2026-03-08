@@ -7,10 +7,10 @@ install: venv
 	.venv/bin/python -m pip install -r requirements.txt
 
 run:
-	.venv/bin/python main.py
+	.venv/bin/python cide.py
 
 run-debug:
-	.venv/bin/python main.py --debug 
+	.venv/bin/python cide.py --debug 
 
 tree:
 	tree --gitignore > tree_project.txt

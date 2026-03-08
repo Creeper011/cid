@@ -1,0 +1,7 @@
+/config/.env
+__pycache__/
+./audios
+.venv
+/config/drive_file.json
+.env
+audios/

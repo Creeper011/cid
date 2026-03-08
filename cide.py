@@ -10,6 +10,7 @@ from src.bootstrap.extension_loader import ExtensionLoader
 from src.config.config_load import ConfigLoader
 from src.config.config_model import ConfigModel
 from src.bootstrap.logging_configurator import LoggingConfigurator
+from src.services import AudioFilesystem, AudioSessionManager, RandomAudio, DiscordVoiceManager
 
 DEFAULT_CONFIG_YAML_PATH = Path("./config.yumly")
 DEFAULT_ENV_PATH = Path(".env")
@@ -70,13 +71,36 @@ class CidApplication():
         """build services such Discord Basebot Extension Loading"""
         assert self.bot is not None, "Bot not initialized"
         assert self.logger is not None, "Logger not initialized"
+        assert self.config, "No config"
+        assert self.config.discord, "No discord in config"
+        assert self.config.discord.audio_sys, "No audio in config"
+        assert self.config.discord.audio_sys.audio_path, "No audio path"
 
-        services = []
+        audio_filesystem = AudioFilesystem(
+            audio_path=self.config.discord.audio_sys.audio_path,
+        )
+
+        audio_manager = AudioSessionManager()
+
+        random_audio_service = RandomAudio(
+            audio_filesystem=audio_filesystem,
+            allow_explicit=False,
+        )
+
+        voice_manager = DiscordVoiceManager(bot=self.bot) # type: ignore
+
+        services = [
+            self.config,
+            audio_filesystem,
+            audio_manager,
+            random_audio_service,
+            voice_manager,
+        ]
 
         extension_loader = self.extension_loader_service(
             bot=self.bot,
             services=services,
-            logger=self.logger
+            logger=self.logger,
         )
 
         self.logger.info("Loading all extensions...")

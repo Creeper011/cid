@@ -8,6 +8,8 @@ from dataclasses import dataclass
 class AudioSystemConfig():
     audio_path: Path | None = None
     audio_database: Path | None = None
+    default_interval_seconds: float | None = None
+    default_provability_percent: int | None = None
 
 @dataclass()
 class DiscordConfig():
@@ -19,4 +21,5 @@ class DiscordConfig():
 @dataclass(frozen=True)
 class ConfigModel():
     """Contains all data"""
+    version: str = "No version specified"
     discord: DiscordConfig | None = None

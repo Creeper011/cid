@@ -9,7 +9,8 @@ class ClearChat(commands.Cog):
   @commands.has_permissions(administrator=True)
   async def clearcommand(self, ctx: commands.Context, number: int):
     await ctx.send("Deleting messages...", delete_after=5)
-    asyncio.sleep(5)
+    await asyncio.sleep(5)
+    
     count = 0
     async for message in ctx.channel.history(limit=number):
         await message.delete()
