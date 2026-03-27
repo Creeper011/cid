@@ -51,28 +51,19 @@ class AudioPlaybackLoop(commands.Cog):
         self.background_loop_task.cancel()
 
     async def background_loop(self) -> None:
-        if not self.voice_manager.is_connected():
-            return
-
-        if self.voice_manager.is_playing():
-            return
-
-        guild_id = self.voice_manager.voice_client.guild.id # type: ignore
-        session = self.audio_manager.get_session(guild_id)
-        if session is None:
-            return
-
-        # Provability check
-        if random.randint(1, 100) > self.config.discord.audio_sys.default_provability_percent: # type: ignore
-            # Skip playing audio this time due to provability
-            return
-
-        try:
-            track = self.random_audio_service.pick(allow_explicit=session.allow_explicit)
-            session.current_track = track
-            self.voice_manager.play_audio(track.path)
-        except LookupError:
-            pass
+        for guild_id, session in self.audio_manager.get_all_sessions().items():
+            if not self.voice_manager.is_connected(guild_id):
+                continue
+            if self.voice_manager.is_playing(guild_id):
+                continue
+            if random.randint(1, 100) > self.config.discord.audio_sys.default_provability_percent:  # type: ignore
+                continue
+            try:
+                track = self.random_audio_service.pick(allow_explicit=session.allow_explicit)
+                session.current_track = track
+                self.voice_manager.play_audio(guild_id, track.path)
+            except LookupError:
+                pass
 
     async def before_background_loop(self) -> None:
         await self.bot.wait_until_ready()

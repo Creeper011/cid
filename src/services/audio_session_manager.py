@@ -23,3 +23,6 @@ class AudioSessionManager():
 
     def has_active_session(self, guild_id: int) -> bool:
         return guild_id in self._sessions
+
+    def get_all_sessions(self) -> dict[int, AudioSession]:
+        return dict(self._sessions) # type: ignore

@@ -35,7 +35,7 @@ class commandsAudios(commands.Cog):
       await interaction.response.send_message("Já estou em um canal de voz neste servidor!", ephemeral=True)
       return
 
-    await self.voice_manager.connect(channel) # type: ignore 
+    await self.voice_manager.connect(guild_id, channel) # type: ignore 
     self.audio_manager.open_session(guild_id=guild_id, channel_id=channel.id) # type: ignore
 
     await interaction.response.send_message(f"Entrei no canal **{channel.name}**! 🔊")
@@ -70,8 +70,8 @@ class commandsAudios(commands.Cog):
 
     session.current_track = track # type: ignore
 
-    self.voice_manager.stop_audio()
-    self.voice_manager.play_audio(track.path)
+    self.voice_manager.stop_audio(guild_id)
+    self.voice_manager.play_audio(guild_id, track.path)
 
     await interaction.response.send_message(f"Tocando: **{track.path.stem}**! 🎵")
 
@@ -91,7 +91,7 @@ class commandsAudios(commands.Cog):
       await interaction.response.send_message("Não estou em nenhum canal de voz!", ephemeral=True)
       return
 
-    await self.voice_manager.disconnect()
+    await self.voice_manager.disconnect(guild_id)
     self.audio_manager.close_session(guild_id) # type: ignore
 
     await interaction.response.send_message("Saí do canal de voz! 👋")
