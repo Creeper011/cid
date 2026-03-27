@@ -14,11 +14,14 @@ class YumlyConfigLoader():
     def __init__(self, yumly_path: Path, logger: Optional[Logger] = None) -> None:
         self.yumly_path: Path = yumly_path
         self.logger: Logger = logger or logging.getLogger(__name__)
+        self.yumly: yumly.Yumly = yumly.Yumly()
 
     def _load_yaml_data(self) -> dict[str, Any]:
+        self.logger.debug("Validating Yumly config from: %s", self.yumly_path.resolve())
+        self.yumly.validate_file(self.yumly_path)
         self.logger.debug("Loading Yumly config from: %s", self.yumly_path.resolve())
         try: 
-            data = yumly.Yumly().load(str(self.yumly_path))
+            data = self.yumly.load(str(self.yumly_path))
             self.logger.debug("Loaded Yumly data: %s", data)
             return data
         

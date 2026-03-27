@@ -1,4 +1,4 @@
-include { .env }
+include { ".env" }
 
 ;> the yumly lang is an mvp.. and i gonna add other config <;
 (app) {
