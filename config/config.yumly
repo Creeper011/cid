@@ -1,0 +1,6 @@
+;> Main configuration file <;
+include { "../.env" }
+
+include { "modules/app.yumly" }
+include { "modules/discord.yumly" }
+include { "modules/audios.yumly" }

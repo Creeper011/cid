@@ -1,1 +1,0 @@
-aqui deve ter modelos de como algo funciona.. parecido com domain de clean arch

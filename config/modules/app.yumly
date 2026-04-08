@@ -1,0 +1,6 @@
+;> Application metadata <;
+(app) {
+    name ;string = "Cid",
+    version ;string = "0.1.0",
+    debug ;bool = false
+}

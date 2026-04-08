@@ -1,7 +1,6 @@
 """Module for loading extensions with DI"""
 
 import inspect
-import pkgutil
 import importlib
 import logging
 from logging import Logger

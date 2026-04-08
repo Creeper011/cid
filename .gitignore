@@ -5,3 +5,4 @@ __pycache__/
 /config/drive_file.json
 .env
 audios/
+legacy

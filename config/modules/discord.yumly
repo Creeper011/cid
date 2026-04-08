@@ -1,0 +1,7 @@
+;> Discord bot configuration <;
+(discord) {
+    token ;env = $["TOKEN"],
+    prefix ;string = "c!",
+    owner_ids ;list[int] = [713544201828040786, 725047979131797635],
+    activity_text ;string = "playing music"
+}

@@ -1,0 +1,11 @@
+;> Audio system configuration <;
+
+@baseAudioPath ;string = "./audios"
+
+(audios) {
+    base_path ;string = @baseAudioPath,
+    safe_path ;string = !"@baseAudioPath/safe",
+    explicit_path ;string = !"@baseAudioPath/explicit",
+    default_interval_seconds ;float = 60.0,
+    default_probability_percent ;int = 50
+}

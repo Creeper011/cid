@@ -2,16 +2,13 @@ import discord
 from discord.ext import commands
 from pydub import AudioSegment
 import os
-from utils.loadconfig import load_config
-
-config = load_config()
-
-AUDIO_FOLDER = config['Audio']['AudioPath']
+from src.config.config_model import ConfigModel
 
 class DownloadAudios(commands.Cog):
   
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self, bot: commands.Bot, config_model: ConfigModel):
+        self.bot: Bot = bot
+        self.config: ConfigModel = config_model
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -22,7 +19,7 @@ class DownloadAudios(commands.Cog):
             if message.channel.id == 1196988301102547017:
                 if message.attachments:
                     for attachment in message.attachments:
-                        file_path = f"{AUDIO_FOLDER}/{attachment.filename}"
+                        file_path = f"{self.config.discord.audio_sys.audio_path}/{attachment.filename}"
 
                         # Verificar se o arquivo já existe
                         if os.path.exists(file_path):

@@ -7,7 +7,6 @@ from pathlib import Path
 from src.config.yuml_config_load import YumlyConfigLoader
 from src.bootstrap.basebot import BaseBot
 from src.bootstrap.extension_loader import ExtensionLoader
-from src.config.config_load import ConfigLoader
 from src.config.config_model import ConfigModel
 from src.bootstrap.logging_configurator import LoggingConfigurator
 from src.services import AudioFilesystem, AudioSessionManager, RandomAudio, DiscordVoiceManager
@@ -16,12 +15,6 @@ DEFAULT_CONFIG_YAML_PATH = Path("./config.yumly")
 DEFAULT_ENV_PATH = Path(".env")
 
 APPLICATION_NAME = "Cid Application"
-
-# compatibility layer for refactor 
-from utils.loadconfig import load_config
-import dotenv
-config = load_config()
-dotenv.load_dotenv()
 
 class CidApplication():
     """literally the cid application class"""
